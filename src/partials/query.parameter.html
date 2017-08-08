@@ -1,0 +1,54 @@
+<div class="gf-form-inline">
+	<div class="gf-form gf-form--grow">
+		<label class="gf-form-label query-keyword width-7">Filter</label>
+		<textarea rows="1" class="gf-form-input" ng-model="target.filter" spellcheck="false" placeholder="filter expression"
+		 data-min-length=0 data-items=100 give-focus="target.refId == 'A'" ng-model-onblur ng-change="onChange()"></textarea>
+	</div>
+</div>
+
+<div class="gf-form-inline">
+	<div class="gf-form">
+		<label class="gf-form-label query-keyword width-7">Aggregation</label>
+
+		<metric-segment segment="crossSeriesReducerSegment" get-options="getCrossSeriesReducer()" on-change="reducerChanged()"></metric-segment>
+		<metric-segment segment="perSeriesAlignerSegment" get-options="getPerSeriesAligner()" on-change="alignerChanged()"></metric-segment>
+		<input type="text" class="gf-form-input input-small width-10" ng-model="target.aggregation.alignmentPeriod" spellcheck='false' placeholder="auto" ng-model-onblur ng-change="onChange()" />
+	</div>
+
+	<div class="gf-form gf-form--grow">
+		<div class="gf-form-label gf-form-label--grow"></div>
+	</div>
+</div>
+
+<div class="gf-form-inline">
+	<div class="gf-form">
+		<label class="gf-form-label query-keyword">Group By Fields</label>
+	</div>
+
+	<div class="gf-form" ng-repeat="segment in groupByFieldsSegments">
+		<metric-segment segment="segment" get-options="getGroupByFieldsSegments(segment, $index)" on-change="groupByFieldsSegmentChanged(segment, $index)"></metric-segment>
+	</div>
+</div>
+
+<div class="gf-form-inline">
+	<div class="gf-form">
+		<label class="gf-form-label query-keyword width-7">
+			Project ID
+		</label>
+		<input type="text" class="gf-form-input input-small width-10" ng-model="target.projectId" spellcheck='false' ng-model-onblur ng-change="onChange()" />
+	</div>
+	<div class="gf-form max-width-30">
+		<label class="gf-form-label query-keyword width-7">Alias</label>
+		<input type="text" class="gf-form-input" ng-model="target.alias" spellcheck='false' ng-model-onblur ng-change="onChange()">
+		<info-popover mode="right-absolute">
+			Alias replacement variables:
+			<ul ng-non-bindable>
+				<li>{{metric.key1.key2}}</li>
+				<li>{{resource.key1.key2}}</li>
+			</ul>
+		</info-popover>
+	</div>
+	<div class="gf-form gf-form--grow">
+		<div class="gf-form-label gf-form-label--grow"></div>
+	</div>
+</div>
