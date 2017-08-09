@@ -23,7 +23,7 @@ export class GoogleStackdriverDatasource {
   query(options) {
     return this.initialize().then(() => {
       return Promise.all(options.targets.map(target => {
-        return this.performTimeSeriesQuery(target, options.range).then(response => {
+        return this.performTimeSeriesQuery(target, options).then(response => {
           response.timeSeries.forEach(series => {
             series.target = target;
           });
@@ -60,15 +60,13 @@ export class GoogleStackdriverDatasource {
   }
 
   metricFindQuery(query) {
-    let range = this.timeSrv.timeRange();
-
     let metricsQuery = query.match(/^metrics\(([^,]+), *(.*)\)/);
     if (metricsQuery) {
       let params = {
         projectId: metricsQuery[1],
         filter: metricsQuery[2]
       };
-      return this.performMetricDescriptorsQuery(params, range).then(response => {
+      return this.performMetricDescriptorsQuery(params, {}).then(response => {
         return this.q.when(response.metricDescriptors.map(d => {
           return { text: d.type };
         }));
@@ -82,7 +80,7 @@ export class GoogleStackdriverDatasource {
         filter: labelQuery[3],
         view: 'HEADERS'
       };
-      return this.performTimeSeriesQuery(params, range).then(response => {
+      return this.performTimeSeriesQuery(params, { range: this.timeSrv.timeRange() }).then(response => {
         let valuePicker = _.property(labelQuery[2]);
         return this.q.when(response.timeSeries.map(d => {
           return { text: valuePicker(d) };
@@ -146,21 +144,27 @@ export class GoogleStackdriverDatasource {
     });
   }
 
-  performTimeSeriesQuery(target, range) {
+  performTimeSeriesQuery(target, options) {
     target = angular.copy(target);
     let params = {};
-    params.name = 'projects/' + target.projectId;
-    params.filter = target.filter;
+    params.name = this.templateSrv.replace('projects/' + target.projectId, options.scopedVars || {});
+    params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
     if (target.aggregation) {
       for (let key of Object.keys(target.aggregation)) {
-        params['aggregation.' + key] = target.aggregation[key];
+        if (_.isArray(target.aggregation[key])) {
+          params['aggregation.' + key] = target.aggregation[key].map(aggregation => {
+            return this.templateSrv.replace(aggregation, options.scopedVars || {});
+          });
+        } else {
+          params['aggregation.' + key] = this.templateSrv.replace(target.aggregation[key], options.scopedVars || {});
+        }
       }
     }
     if (target.pageToken) {
       params.pageToken = target.pageToken;
     }
-    params['interval.startTime'] = this.convertTime(range.from, false);
-    params['interval.endTime'] = this.convertTime(range.to, true);
+    params['interval.startTime'] = this.convertTime(options.range.from, false);
+    params['interval.endTime'] = this.convertTime(options.range.to, true);
     return gapi.client.monitoring.projects.timeSeries.list(params).then(response => {
       response = JSON.parse(response.body);
       if (!response) {
@@ -170,22 +174,22 @@ export class GoogleStackdriverDatasource {
         return response;
       }
       target.pageToken = response.nextPageToken;
-      return this.performTimeSeriesQuery(target, range).then(nextResponse => {
+      return this.performTimeSeriesQuery(target, options).then(nextResponse => {
         response = response.timeSeries.concat(nextResponse.timeSeries);
         return response;
       });
     });
   }
 
-  performMetricDescriptorsQuery(target, range) {
+  performMetricDescriptorsQuery(target, options) {
     target = angular.copy(target);
     let params = {};
-    params.name = 'projects/' + target.projectId;
-    params.filter = target.filter;
+    params.name = this.templateSrv.replace('projects/' + target.projectId, options.scopedVars || {});
+    params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
     if (target.pageToken) {
       params.pageToken = target.pageToken;
     }
-    return gapi.client.monitoring.projects.metricDescriptors.list(params).then(response => {
+    return gapi.client.monitoring.projects.metricDescriptors.list(params, options).then(response => {
       response = JSON.parse(response.body);
       if (!response) {
         return {};
@@ -194,7 +198,7 @@ export class GoogleStackdriverDatasource {
         return response;
       }
       target.pageToken = response.nextPageToken;
-      return this.performMetricDescriptorsQuery(target, range).then(nextResponse => {
+      return this.performMetricDescriptorsQuery(target, options.range).then(nextResponse => {
         response = response.metricDescriptors.concat(nextResponse.metricDescriptors);
         return response;
       });
