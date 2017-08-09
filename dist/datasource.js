@@ -47,7 +47,10 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
           this.type = instanceSettings.type;
           this.name = instanceSettings.name;
           this.clientId = instanceSettings.jsonData.clientId;
-          this.scopes = ['https://www.googleapis.com/auth/cloud-platform', 'https://www.googleapis.com/auth/monitoring', 'https://www.googleapis.com/auth/monitoring.read'].join(' ');
+          this.scopes = [
+          //'https://www.googleapis.com/auth/cloud-platform',
+          //'https://www.googleapis.com/auth/monitoring',
+          'https://www.googleapis.com/auth/monitoring.read'].join(' ');
           this.discoveryDocs = ["https://monitoring.googleapis.com/$discovery/rest?version=v3"];
           this.initialized = false;
           this.q = $q;
