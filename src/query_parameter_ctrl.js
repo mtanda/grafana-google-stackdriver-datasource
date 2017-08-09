@@ -118,8 +118,8 @@ angular.module('grafana.controllers').controller('GoogleStackdriverQueryParamete
   };
 
   $scope.ensurePlusButton = function (segments) {
-    var count = segments.length;
-    var lastSegment = segments[Math.max(count - 1, 0)];
+    let count = segments.length;
+    let lastSegment = segments[Math.max(count - 1, 0)];
 
     if (!lastSegment || lastSegment.type !== 'plus-button') {
       segments.push(uiSegmentSrv.newPlusButton());
