@@ -1,0 +1,33 @@
+{
+  "name": "GoogleStackdriver",
+  "id": "mtanda-google-stackdriver-datasource",
+  "type": "datasource",
+
+  "partials": {
+    "config": "public/app/plugins/datasource/mtanda-google-stackdriver-datasource/partials/config.html"
+  },
+
+  "metrics": true,
+  "annotations": false,
+
+  "info": {
+    "description": "Google Stackdriver datasource",
+    "author": {
+      "name": "Mitsuhiro Tanda"
+    },
+    "links": [
+      {"name": "GitHub", "url": "https://github.com/mtanda/grafana-google-stackdriver-datasource"},
+      {"name": "MIT License", "url": "https://github.com/mtanda/grafana-google-stackdriver-datasource/blob/master/LICENSE"}
+    ],
+    "screenshots": [
+      {"name": "Stackdriver", "path": "images/stackdriver.png"}
+    ],
+    "version": "1.0.0",
+    "updated": "2017-08-04"
+  },
+
+  "dependencies": {
+    "grafanaVersion": "3.x.x",
+    "plugins": [ ]
+  }
+}
