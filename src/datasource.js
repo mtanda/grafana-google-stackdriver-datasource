@@ -61,7 +61,21 @@ export class GoogleStackdriverDatasource {
 
   metricFindQuery(query) {
     let range = this.timeSrv.timeRange();
-    var labelQuery = query.match(/^label_values\(([^,]+), *([^,]+), *(.*)\)/);
+
+    let metricsQuery = query.match(/^metrics\(([^,]+), *(.*)\)/);
+    if (metricsQuery) {
+      let params = {
+        projectId: metricsQuery[1],
+        filter: metricsQuery[2]
+      };
+      return this.performMetricDescriptorsQuery(params, range).then(response => {
+        return this.q.when(response.metricDescriptors.map(d => {
+          return { text: d.type };
+        }));
+      });
+    }
+
+    let labelQuery = query.match(/^label_values\(([^,]+), *([^,]+), *(.*)\)/);
     if (labelQuery) {
       let params = {
         projectId: labelQuery[1],
@@ -158,6 +172,30 @@ export class GoogleStackdriverDatasource {
       target.pageToken = response.nextPageToken;
       return this.performTimeSeriesQuery(target, range).then(nextResponse => {
         response = response.timeSeries.concat(nextResponse.timeSeries);
+        return response;
+      });
+    });
+  }
+
+  performMetricDescriptorsQuery(target, range) {
+    target = angular.copy(target);
+    let params = {};
+    params.name = 'projects/' + target.projectId;
+    params.filter = target.filter;
+    if (target.pageToken) {
+      params.pageToken = target.pageToken;
+    }
+    return gapi.client.monitoring.projects.metricDescriptors.list(params).then(response => {
+      response = JSON.parse(response.body);
+      if (!response) {
+        return {};
+      }
+      if (!response.nextPageToken) {
+        return response;
+      }
+      target.pageToken = response.nextPageToken;
+      return this.performMetricDescriptorsQuery(target, range).then(nextResponse => {
+        response = response.metricDescriptors.concat(nextResponse.metricDescriptors);
         return response;
       });
     });
