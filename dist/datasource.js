@@ -65,7 +65,7 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
 
             return this.initialize().then(function () {
               return Promise.all(options.targets.map(function (target) {
-                return _this.performTimeSeriesQuery(target, options.range).then(function (response) {
+                return _this.performTimeSeriesQuery(target, options).then(function (response) {
                   response.timeSeries.forEach(function (series) {
                     series.target = target;
                   });
@@ -127,15 +127,27 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
           value: function metricFindQuery(query) {
             var _this2 = this;
 
-            var range = this.timeSrv.timeRange();
+            var metricsQuery = query.match(/^metrics\(([^,]+), *(.*)\)/);
+            if (metricsQuery) {
+              var params = {
+                projectId: metricsQuery[1],
+                filter: metricsQuery[2]
+              };
+              return this.performMetricDescriptorsQuery(params, {}).then(function (response) {
+                return _this2.q.when(response.metricDescriptors.map(function (d) {
+                  return { text: d.type };
+                }));
+              });
+            }
+
             var labelQuery = query.match(/^label_values\(([^,]+), *([^,]+), *(.*)\)/);
             if (labelQuery) {
-              var params = {
+              var _params = {
                 projectId: labelQuery[1],
                 filter: labelQuery[3],
                 view: 'HEADERS'
               };
-              return this.performTimeSeriesQuery(params, range).then(function (response) {
+              return this.performTimeSeriesQuery(_params, { range: this.timeSrv.timeRange() }).then(function (response) {
                 var valuePicker = _.property(labelQuery[2]);
                 return _this2.q.when(response.timeSeries.map(function (d) {
                   return { text: valuePicker(d) };
@@ -207,13 +219,13 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
           }
         }, {
           key: 'performTimeSeriesQuery',
-          value: function performTimeSeriesQuery(target, range) {
+          value: function performTimeSeriesQuery(target, options) {
             var _this5 = this;
 
             target = angular.copy(target);
             var params = {};
-            params.name = 'projects/' + target.projectId;
-            params.filter = target.filter;
+            params.name = this.templateSrv.replace('projects/' + target.projectId, options.scopedVars || {});
+            params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
             if (target.aggregation) {
               var _iteratorNormalCompletion2 = true;
               var _didIteratorError2 = false;
@@ -223,7 +235,13 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
                 for (var _iterator2 = Object.keys(target.aggregation)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
                   var key = _step2.value;
 
-                  params['aggregation.' + key] = target.aggregation[key];
+                  if (_.isArray(target.aggregation[key])) {
+                    params['aggregation.' + key] = target.aggregation[key].map(function (aggregation) {
+                      return _this5.templateSrv.replace(aggregation, options.scopedVars || {});
+                    });
+                  } else {
+                    params['aggregation.' + key] = this.templateSrv.replace(target.aggregation[key], options.scopedVars || {});
+                  }
                 }
               } catch (err) {
                 _didIteratorError2 = true;
@@ -243,8 +261,8 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
             if (target.pageToken) {
               params.pageToken = target.pageToken;
             }
-            params['interval.startTime'] = this.convertTime(range.from, false);
-            params['interval.endTime'] = this.convertTime(range.to, true);
+            params['interval.startTime'] = this.convertTime(options.range.from, false);
+            params['interval.endTime'] = this.convertTime(options.range.to, true);
             return gapi.client.monitoring.projects.timeSeries.list(params).then(function (response) {
               response = JSON.parse(response.body);
               if (!response) {
@@ -254,8 +272,35 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
                 return response;
               }
               target.pageToken = response.nextPageToken;
-              return _this5.performTimeSeriesQuery(target, range).then(function (nextResponse) {
+              return _this5.performTimeSeriesQuery(target, options).then(function (nextResponse) {
                 response = response.timeSeries.concat(nextResponse.timeSeries);
+                return response;
+              });
+            });
+          }
+        }, {
+          key: 'performMetricDescriptorsQuery',
+          value: function performMetricDescriptorsQuery(target, options) {
+            var _this6 = this;
+
+            target = angular.copy(target);
+            var params = {};
+            params.name = this.templateSrv.replace('projects/' + target.projectId, options.scopedVars || {});
+            params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
+            if (target.pageToken) {
+              params.pageToken = target.pageToken;
+            }
+            return gapi.client.monitoring.projects.metricDescriptors.list(params, options).then(function (response) {
+              response = JSON.parse(response.body);
+              if (!response) {
+                return {};
+              }
+              if (!response.nextPageToken) {
+                return response;
+              }
+              target.pageToken = response.nextPageToken;
+              return _this6.performMetricDescriptorsQuery(target, options.range).then(function (nextResponse) {
+                response = response.metricDescriptors.concat(nextResponse.metricDescriptors);
                 return response;
               });
             });
