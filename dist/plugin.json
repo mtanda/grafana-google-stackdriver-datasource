@@ -20,7 +20,7 @@
       {"name": "MIT License", "url": "https://github.com/mtanda/grafana-google-stackdriver-datasource/blob/master/LICENSE"}
     ],
     "screenshots": [
-      {"name": "Stackdriver", "path": "images/stackdriver.png"}
+      {"name": "Query Editor", "path": "images/query_editor.png"}
     ],
     "version": "1.0.0",
     "updated": "2017-08-04"

@@ -13,6 +13,26 @@ At first time, you need to accept to open this popup window, and accept to use A
 
 ![](https://raw.githubusercontent.com/mtanda/grafana-google-stackdriver-datasource/master/dist/images/setup2.png)
 
+### Query editor
+
+![](https://raw.githubusercontent.com/mtanda/grafana-google-stackdriver-datasource/master/dist/images/query_editor.png)
+
+Please fill parameter for [projects.timeSeries.list](https://cloud.google.com/monitoring/api/ref_v3/rest/v3/projects.timeSeries/list) method.
+
+You don't need to add `projects/` prefix for `Project ID` field.
+
+### Templating
+
+#### Query variable
+
+Name | Description
+---- | --------
+*metrics(project_id, filter expression)* | Returns a list of metrics matching the `filter expression`.
+*label_values(project_id, path to label name, filter expression)* | Returns a list of label values matching the `filter expression` and the `path to label name`.
+
+Please specify `path to label name` from top of [TimeSeries](https://cloud.google.com/monitoring/api/ref_v3/rest/v3/TimeSeries) object.
+For example, if you want to get instance name, set `metric.labels.instance_name` to `path to label name`.
+
 #### Changelog
 
 ##### v1.0.0
