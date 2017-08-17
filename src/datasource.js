@@ -8,6 +8,7 @@ export class GoogleStackdriverDatasource {
     this.type = instanceSettings.type;
     this.name = instanceSettings.name;
     this.clientId = instanceSettings.jsonData.clientId;
+    this.defaultProjectId = instanceSettings.jsonData.defaultProjectId;
     this.scopes = [
       //'https://www.googleapis.com/auth/cloud-platform',
       //'https://www.googleapis.com/auth/monitoring',
@@ -60,11 +61,13 @@ export class GoogleStackdriverDatasource {
   }
 
   metricFindQuery(query) {
-    let metricsQuery = query.match(/^metrics\(([^,]+), *(.*)\)/);
+    let metricsQuery = query.match(/^metrics\((([^,]+), *)?(.*)\)/);
     if (metricsQuery) {
+      let projectId = metricsQuery[2] || this.defaultProjectId;
+      let filter = metricsQuery[3];
       let params = {
-        projectId: metricsQuery[1],
-        filter: metricsQuery[2]
+        projectId: projectId,
+        filter: filter
       };
       return this.performMetricDescriptorsQuery(params, {}).then(response => {
         return this.q.when(response.metricDescriptors.map(d => {
@@ -73,15 +76,18 @@ export class GoogleStackdriverDatasource {
       });
     }
 
-    let labelQuery = query.match(/^label_values\(([^,]+), *([^,]+), *(.*)\)/);
+    let labelQuery = query.match(/^label_values\((([^,]+), *)?([^,]+), *(.*)\)/);
     if (labelQuery) {
+      let projectId = labelQuery[2] || this.defaultProjectId;
+      let targetProperty = labelQuery[3];
+      let filter = labelQuery[4];
       let params = {
-        projectId: labelQuery[1],
-        filter: labelQuery[3],
+        projectId: projectId,
+        filter: filter,
         view: 'HEADERS'
       };
       return this.performTimeSeriesQuery(params, { range: this.timeSrv.timeRange() }).then(response => {
-        let valuePicker = _.property(labelQuery[2]);
+        let valuePicker = _.property(targetProperty);
         return this.q.when(response.timeSeries.map(d => {
           return { text: valuePicker(d) };
         }));
