@@ -47,6 +47,7 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
           this.type = instanceSettings.type;
           this.name = instanceSettings.name;
           this.clientId = instanceSettings.jsonData.clientId;
+          this.defaultProjectId = instanceSettings.jsonData.defaultProjectId;
           this.scopes = [
           //'https://www.googleapis.com/auth/cloud-platform',
           //'https://www.googleapis.com/auth/monitoring',
@@ -127,11 +128,13 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
           value: function metricFindQuery(query) {
             var _this2 = this;
 
-            var metricsQuery = query.match(/^metrics\(([^,]+), *(.*)\)/);
+            var metricsQuery = query.match(/^metrics\((([^,]+), *)?(.*)\)/);
             if (metricsQuery) {
+              var projectId = metricsQuery[2] || this.defaultProjectId;
+              var filter = metricsQuery[3];
               var params = {
-                projectId: metricsQuery[1],
-                filter: metricsQuery[2]
+                projectId: projectId,
+                filter: filter
               };
               return this.performMetricDescriptorsQuery(params, {}).then(function (response) {
                 return _this2.q.when(response.metricDescriptors.map(function (d) {
@@ -140,15 +143,18 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
               });
             }
 
-            var labelQuery = query.match(/^label_values\(([^,]+), *([^,]+), *(.*)\)/);
+            var labelQuery = query.match(/^label_values\((([^,]+), *)?([^,]+), *(.*)\)/);
             if (labelQuery) {
+              var _projectId = labelQuery[2] || this.defaultProjectId;
+              var targetProperty = labelQuery[3];
+              var _filter = labelQuery[4];
               var _params = {
-                projectId: labelQuery[1],
-                filter: labelQuery[3],
+                projectId: _projectId,
+                filter: _filter,
                 view: 'HEADERS'
               };
               return this.performTimeSeriesQuery(_params, { range: this.timeSrv.timeRange() }).then(function (response) {
-                var valuePicker = _.property(labelQuery[2]);
+                var valuePicker = _.property(targetProperty);
                 return _this2.q.when(response.timeSeries.map(function (d) {
                   return { text: valuePicker(d) };
                 }));
