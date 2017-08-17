@@ -30,6 +30,8 @@ Name | Description
 *metrics(project_id, filter expression)* | Returns a list of metrics matching the `filter expression`.
 *label_values(project_id, path to label name, filter expression)* | Returns a list of label values matching the `filter expression` and the `path to label name`.
 
+The `project_id` is optional.
+
 Please specify `path to label name` from top of [TimeSeries](https://cloud.google.com/monitoring/api/ref_v3/rest/v3/TimeSeries) object.
 For example, if you want to get instance name, set `metric.labels.instance_name` to `path to label name`.
 
