@@ -153,7 +153,7 @@ export class GoogleStackdriverDatasource {
   performTimeSeriesQuery(target, options) {
     target = angular.copy(target);
     let params = {};
-    params.name = this.templateSrv.replace('projects/' + target.projectId, options.scopedVars || {});
+    params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
     params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
     if (target.aggregation) {
       for (let key of Object.keys(target.aggregation)) {
@@ -190,7 +190,7 @@ export class GoogleStackdriverDatasource {
   performMetricDescriptorsQuery(target, options) {
     target = angular.copy(target);
     let params = {};
-    params.name = this.templateSrv.replace('projects/' + target.projectId, options.scopedVars || {});
+    params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
     params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
     if (target.pageToken) {
       params.pageToken = target.pageToken;
