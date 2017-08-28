@@ -26,7 +26,7 @@ System.register(['angular', 'lodash'], function (_export, _context) {
         };
       });
 
-      angular.module('grafana.controllers').controller('GoogleStackdriverQueryParameterCtrl', function ($scope, templateSrv, uiSegmentSrv, datasourceSrv, $q) {
+      angular.module('grafana.controllers').controller('GoogleStackdriverQueryParameterCtrl', function ($scope, templateSrv, uiSegmentSrv, datasourceSrv, timeSrv, $q) {
         $scope.init = function () {
           var target = $scope.target;
           target.projectId = target.projectId || '';
@@ -75,8 +75,60 @@ System.register(['angular', 'lodash'], function (_export, _context) {
           $scope.onChange();
         };
 
+        function getAllFieldPaths(timeSeries) {
+          var paths = [];
+          var walk = function walk(obj, path) {
+            path = path || '';
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
+
+            try {
+              for (var _iterator = Object.keys(obj)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                var key = _step.value;
+
+                if (obj[key] instanceof Object) {
+                  walk(obj[key], path + key + '.');
+                } else {
+                  paths.push(path + key);
+                }
+              }
+            } catch (err) {
+              _didIteratorError = true;
+              _iteratorError = err;
+            } finally {
+              try {
+                if (!_iteratorNormalCompletion && _iterator.return) {
+                  _iterator.return();
+                }
+              } finally {
+                if (_didIteratorError) {
+                  throw _iteratorError;
+                }
+              }
+            }
+          };
+          walk(timeSeries, '');
+          return paths;
+        }
+
         $scope.getGroupByFieldsSegments = function () {
-          return $q.when(_.flatten([angular.copy($scope.removeGroupByFieldsSegment), uiSegmentSrv.getSegmentForValue('resource.type')]));
+          var params = {
+            projectId: $scope.target.projectId || $scope.datasource.defaultProjectId,
+            filter: $scope.target.filter,
+            view: 'HEADERS'
+          };
+          return $scope.datasource.performTimeSeriesQuery(params, { range: timeSrv.timeRange() }).then(function (response) {
+            var fields = _.uniq(_.flatten(response.timeSeries.map(function (d) {
+              delete d.points;
+              return getAllFieldPaths(d);
+            }))).map(function (f) {
+              f = f.replace(/\.labels\./, '.label.');
+              return uiSegmentSrv.newSegment({ value: f, expandable: false });
+            });
+            fields.push(angular.copy($scope.removeGroupByFieldsSegment));
+            return fields;
+          });
         };
 
         $scope.groupByFieldsSegmentChanged = function (segment, index) {
