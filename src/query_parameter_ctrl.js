@@ -28,8 +28,8 @@ angular.module('grafana.controllers').controller('GoogleStackdriverQueryParamete
     };
     target.alias = target.alias || '';
 
-    $scope.perSeriesAlignerSegment = uiSegmentSrv.newSegment({value: 'aligner'});
-    $scope.crossSeriesReducerSegment = uiSegmentSrv.newSegment({value: 'reducer'});
+    $scope.perSeriesAlignerSegment = uiSegmentSrv.getSegmentForValue($scope.target.aggregation.perSeriesAligner, 'aligner');
+    $scope.crossSeriesReducerSegment = uiSegmentSrv.getSegmentForValue($scope.target.aggregation.crossSeriesReducer, 'reducer');
     $scope.groupByFieldsSegments = _.map($scope.target.aggregation.groupByFields, (field) => {
       return uiSegmentSrv.getSegmentForValue(field);
     });
