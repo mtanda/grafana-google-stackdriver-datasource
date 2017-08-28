@@ -245,7 +245,7 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
                     params['aggregation.' + key] = target.aggregation[key].map(function (aggregation) {
                       return _this5.templateSrv.replace(aggregation, options.scopedVars || {});
                     });
-                  } else {
+                  } else if (target.aggregation[key] !== '') {
                     params['aggregation.' + key] = this.templateSrv.replace(target.aggregation[key], options.scopedVars || {});
                   }
                 }
