@@ -14,7 +14,7 @@ angular.module('grafana.directives').directive('googleStackdriverQueryParameter'
   };
 });
 
-angular.module('grafana.controllers').controller('GoogleStackdriverQueryParameterCtrl', ($scope, templateSrv, uiSegmentSrv, datasourceSrv, $q) => {
+angular.module('grafana.controllers').controller('GoogleStackdriverQueryParameterCtrl', ($scope, templateSrv, uiSegmentSrv, datasourceSrv, timeSrv, $q) => {
   $scope.init = function () {
     let target = $scope.target;
     target.projectId = target.projectId || '';
@@ -95,11 +95,39 @@ angular.module('grafana.controllers').controller('GoogleStackdriverQueryParamete
     $scope.onChange();
   };
 
+  function getAllFieldPaths(timeSeries) {
+    let paths = [];
+    let walk = function (obj, path) {
+      path = path || '';
+      for (let key of Object.keys(obj)) {
+        if (obj[key] instanceof Object) {
+          walk(obj[key], path + key + '.');
+        } else {
+          paths.push(path + key);
+        }
+      }
+    }
+    walk(timeSeries, '');
+    return paths;
+  }
+
   $scope.getGroupByFieldsSegments = function () {
-    return $q.when(_.flatten([
-      angular.copy($scope.removeGroupByFieldsSegment),
-      uiSegmentSrv.getSegmentForValue('resource.type'),
-    ]));
+    let params = {
+      projectId: $scope.target.projectId || $scope.datasource.defaultProjectId,
+      filter: $scope.target.filter,
+      view: 'HEADERS'
+    };
+    return $scope.datasource.performTimeSeriesQuery(params, { range: timeSrv.timeRange() }).then(response => {
+      let fields = _.uniq(_.flatten(response.timeSeries.map(d => {
+        delete(d.points);
+        return getAllFieldPaths(d);
+      }))).map(f => {
+        f = f.replace(/\.labels\./, '.label.');
+        return uiSegmentSrv.newSegment({ value: f, expandable: false });
+      });
+      fields.push(angular.copy($scope.removeGroupByFieldsSegment));
+      return fields;
+    });
   };
 
   $scope.groupByFieldsSegmentChanged = function (segment, index) {
