@@ -230,7 +230,7 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
 
             target = angular.copy(target);
             var params = {};
-            params.name = this.templateSrv.replace('projects/' + target.projectId, options.scopedVars || {});
+            params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
             params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
             if (target.aggregation) {
               var _iteratorNormalCompletion2 = true;
@@ -291,7 +291,7 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
 
             target = angular.copy(target);
             var params = {};
-            params.name = this.templateSrv.replace('projects/' + target.projectId, options.scopedVars || {});
+            params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
             params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
             if (target.pageToken) {
               params.pageToken = target.pageToken;
