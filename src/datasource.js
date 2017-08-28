@@ -161,7 +161,7 @@ export class GoogleStackdriverDatasource {
           params['aggregation.' + key] = target.aggregation[key].map(aggregation => {
             return this.templateSrv.replace(aggregation, options.scopedVars || {});
           });
-        } else {
+        } else if (target.aggregation[key] !== '') {
           params['aggregation.' + key] = this.templateSrv.replace(target.aggregation[key], options.scopedVars || {});
         }
       }
