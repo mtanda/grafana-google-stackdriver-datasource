@@ -230,7 +230,7 @@ export class GoogleStackdriverDatasource {
     if (target.pageToken) {
       params.pageToken = target.pageToken;
     }
-    return gapi.client.monitoring.projects.metricDescriptors.list(params, options).then(response => {
+    return gapi.client.monitoring.projects.metricDescriptors.list(params).then(response => {
       response = JSON.parse(response.body);
       if (!response) {
         return {};
@@ -239,7 +239,7 @@ export class GoogleStackdriverDatasource {
         return response;
       }
       target.pageToken = response.nextPageToken;
-      return this.performMetricDescriptorsQuery(target, options.range).then(nextResponse => {
+      return this.performMetricDescriptorsQuery(target, options).then(nextResponse => {
         response = response.metricDescriptors.concat(nextResponse.metricDescriptors);
         return response;
       });
@@ -253,7 +253,7 @@ export class GoogleStackdriverDatasource {
     if (target.pageToken) {
       params.pageToken = target.pageToken;
     }
-    return gapi.client.monitoring.projects.groups.list(params, options).then(response => {
+    return gapi.client.monitoring.projects.groups.list(params).then(response => {
       response = JSON.parse(response.body);
       if (!response) {
         return {};
@@ -262,7 +262,7 @@ export class GoogleStackdriverDatasource {
         return response;
       }
       target.pageToken = response.nextPageToken;
-      return this.performGroupsQuery(target, options.range).then(nextResponse => {
+      return this.performGroupsQuery(target, options).then(nextResponse => {
         response = response.group.concat(nextResponse.group);
         return response;
       });
