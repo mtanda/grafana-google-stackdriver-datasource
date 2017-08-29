@@ -94,6 +94,19 @@ export class GoogleStackdriverDatasource {
       });
     }
 
+    let groupsQuery = query.match(/^groups\(([^,]+)?\)/);
+    if (groupsQuery) {
+      let projectId = groupsQuery[1] || this.defaultProjectId;
+      let params = {
+        projectId: projectId
+      };
+      return this.performGroupsQuery(params, {}).then(response => {
+        return this.q.when(response.group.map(d => {
+          return { text: d.displayName };
+        }));
+      });
+    }
+
     return this.q.when([]);
   }
 
@@ -206,6 +219,29 @@ export class GoogleStackdriverDatasource {
       target.pageToken = response.nextPageToken;
       return this.performMetricDescriptorsQuery(target, options.range).then(nextResponse => {
         response = response.metricDescriptors.concat(nextResponse.metricDescriptors);
+        return response;
+      });
+    });
+  }
+
+  performGroupsQuery(target, options) {
+    target = angular.copy(target);
+    let params = {};
+    params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
+    if (target.pageToken) {
+      params.pageToken = target.pageToken;
+    }
+    return gapi.client.monitoring.projects.groups.list(params, options).then(response => {
+      response = JSON.parse(response.body);
+      if (!response) {
+        return {};
+      }
+      if (!response.nextPageToken) {
+        return response;
+      }
+      target.pageToken = response.nextPageToken;
+      return this.performGroupsQuery(target, options.range).then(nextResponse => {
+        response = response.group.concat(nextResponse.group);
         return response;
       });
     });
