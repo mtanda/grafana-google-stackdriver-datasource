@@ -102,7 +102,29 @@ export class GoogleStackdriverDatasource {
       };
       return this.performGroupsQuery(params, {}).then(response => {
         return this.q.when(response.group.map(d => {
-          return { text: d.displayName };
+          return {
+            //text: d.displayName
+            text: d.name.split('/')[3]
+          };
+        }));
+      });
+    }
+
+    let groupMembersQuery = query.match(/^group_members\((([^,]+), *)?([^,]+), *([^,]+), *(.*)\)/);
+    if (groupMembersQuery) {
+      let projectId = groupMembersQuery[2] || this.defaultProjectId;
+      let groupId = groupMembersQuery[3];
+      let targetProperty = groupMembersQuery[4];
+      let filter = groupMembersQuery[5];
+      let params = {
+        projectId: projectId,
+        groupId: groupId,
+        filter: filter
+      };
+      return this.performGroupsMembersQuery(params, { range: this.timeSrv.timeRange() }).then(response => {
+        let valuePicker = _.property(targetProperty);
+        return this.q.when(response.members.map(d => {
+          return { text: valuePicker(d) };
         }));
       });
     }
@@ -242,6 +264,35 @@ export class GoogleStackdriverDatasource {
       target.pageToken = response.nextPageToken;
       return this.performGroupsQuery(target, options.range).then(nextResponse => {
         response = response.group.concat(nextResponse.group);
+        return response;
+      });
+    });
+  }
+
+  performGroupsMembersQuery(target, options) {
+    target = angular.copy(target);
+    let params = {};
+    params.name = this.templateSrv.replace('projects/'
+     + (target.projectId || this.defaultProjectId)
+     + '/groups/'
+     + target.groupId, options.scopedVars || {});
+    params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
+    if (target.pageToken) {
+      params.pageToken = target.pageToken;
+    }
+    params['interval.startTime'] = this.convertTime(options.range.from, false);
+    params['interval.endTime'] = this.convertTime(options.range.to, true);
+    return gapi.client.monitoring.projects.groups.members.list(params).then(response => {
+      response = JSON.parse(response.body);
+      if (!response) {
+        return {};
+      }
+      if (!response.nextPageToken) {
+        return response;
+      }
+      target.pageToken = response.nextPageToken;
+      return this.performGroupsMembersQuery(target, options).then(nextResponse => {
+        response = response.members.concat(nextResponse.members);
         return response;
       });
     });
