@@ -29,6 +29,8 @@ Name | Description
 ---- | --------
 *metrics(project_id, filter expression)* | Returns a list of metrics matching the `filter expression`.
 *label_values(project_id, path to label name, filter expression)* | Returns a list of label values matching the `filter expression` and the `path to label name`.
+*groups(project_id)* | Returns a list of groups.
+*group_members(project_id, group_id, path to label name, filter expression)* | Returns a list of group members matching the `filter expression` and the `path to label name`.
 
 The `project_id` is optional.
 
