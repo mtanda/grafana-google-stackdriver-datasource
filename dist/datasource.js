@@ -161,6 +161,41 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
               });
             }
 
+            var groupsQuery = query.match(/^groups\(([^,]+)?\)/);
+            if (groupsQuery) {
+              var _projectId2 = groupsQuery[1] || this.defaultProjectId;
+              var _params2 = {
+                projectId: _projectId2
+              };
+              return this.performGroupsQuery(_params2, {}).then(function (response) {
+                return _this2.q.when(response.group.map(function (d) {
+                  return {
+                    //text: d.displayName
+                    text: d.name.split('/')[3]
+                  };
+                }));
+              });
+            }
+
+            var groupMembersQuery = query.match(/^group_members\((([^,]+), *)?([^,]+), *([^,]+), *(.*)\)/);
+            if (groupMembersQuery) {
+              var _projectId3 = groupMembersQuery[2] || this.defaultProjectId;
+              var groupId = groupMembersQuery[3];
+              var _targetProperty = groupMembersQuery[4];
+              var _filter2 = groupMembersQuery[5];
+              var _params3 = {
+                projectId: _projectId3,
+                groupId: groupId,
+                filter: _filter2
+              };
+              return this.performGroupsMembersQuery(_params3, { range: this.timeSrv.timeRange() }).then(function (response) {
+                var valuePicker = _.property(_targetProperty);
+                return _this2.q.when(response.members.map(function (d) {
+                  return { text: valuePicker(d) };
+                }));
+              });
+            }
+
             return this.q.when([]);
           }
         }, {
@@ -296,7 +331,7 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
             if (target.pageToken) {
               params.pageToken = target.pageToken;
             }
-            return gapi.client.monitoring.projects.metricDescriptors.list(params, options).then(function (response) {
+            return gapi.client.monitoring.projects.metricDescriptors.list(params).then(function (response) {
               response = JSON.parse(response.body);
               if (!response) {
                 return {};
@@ -305,8 +340,63 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
                 return response;
               }
               target.pageToken = response.nextPageToken;
-              return _this6.performMetricDescriptorsQuery(target, options.range).then(function (nextResponse) {
+              return _this6.performMetricDescriptorsQuery(target, options).then(function (nextResponse) {
                 response = response.metricDescriptors.concat(nextResponse.metricDescriptors);
+                return response;
+              });
+            });
+          }
+        }, {
+          key: 'performGroupsQuery',
+          value: function performGroupsQuery(target, options) {
+            var _this7 = this;
+
+            target = angular.copy(target);
+            var params = {};
+            params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
+            if (target.pageToken) {
+              params.pageToken = target.pageToken;
+            }
+            return gapi.client.monitoring.projects.groups.list(params).then(function (response) {
+              response = JSON.parse(response.body);
+              if (!response) {
+                return {};
+              }
+              if (!response.nextPageToken) {
+                return response;
+              }
+              target.pageToken = response.nextPageToken;
+              return _this7.performGroupsQuery(target, options).then(function (nextResponse) {
+                response = response.group.concat(nextResponse.group);
+                return response;
+              });
+            });
+          }
+        }, {
+          key: 'performGroupsMembersQuery',
+          value: function performGroupsMembersQuery(target, options) {
+            var _this8 = this;
+
+            target = angular.copy(target);
+            var params = {};
+            params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId) + '/groups/' + target.groupId, options.scopedVars || {});
+            params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
+            if (target.pageToken) {
+              params.pageToken = target.pageToken;
+            }
+            params['interval.startTime'] = this.convertTime(options.range.from, false);
+            params['interval.endTime'] = this.convertTime(options.range.to, true);
+            return gapi.client.monitoring.projects.groups.members.list(params).then(function (response) {
+              response = JSON.parse(response.body);
+              if (!response) {
+                return {};
+              }
+              if (!response.nextPageToken) {
+                return response;
+              }
+              target.pageToken = response.nextPageToken;
+              return _this8.performGroupsMembersQuery(target, options).then(function (nextResponse) {
+                response = response.members.concat(nextResponse.members);
                 return response;
               });
             });
