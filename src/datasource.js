@@ -135,6 +135,9 @@ export class GoogleStackdriverDatasource {
   testDatasource() {
     return this.initialize().then(() => {
       return { status: 'success', message: 'Data source is working', title: 'Success' };
+    }).catch(err => {
+      console.log(err);
+      return { status: "error", message: err.message, title: "Error" };
     });
   }
 
