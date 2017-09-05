@@ -133,14 +133,8 @@ export class GoogleStackdriverDatasource {
   }
 
   testDatasource() {
-    return this.load().then(() => {
-      return gapi.client.init({
-        clientId: this.clientId,
-        scope: this.scopes,
-        discoveryDocs: this.discoveryDocs
-      }).then(() => {
-        return { status: 'success', message: 'Data source is working', title: 'Success' };
-      });
+    return this.initialize().then(() => {
+      return { status: 'success', message: 'Data source is working', title: 'Success' };
     });
   }
 
