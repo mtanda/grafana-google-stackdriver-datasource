@@ -197,6 +197,10 @@ export class GoogleStackdriverDatasource {
           params['aggregation.' + key] = this.templateSrv.replace(target.aggregation[key], options.scopedVars || {});
         }
       }
+      // auto period
+      if (params['aggregation.perSeriesAligner'] !== 'ALIGN_NONE' && !params['aggregation.alignmentPeriod']) {
+        params['aggregation.alignmentPeriod'] = Math.max((options.intervalMs / 1000), 60) + 's';
+      }
     }
     if (target.pageToken) {
       params.pageToken = target.pageToken;
