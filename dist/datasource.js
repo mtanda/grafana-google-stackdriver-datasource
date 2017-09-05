@@ -201,16 +201,11 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
         }, {
           key: 'testDatasource',
           value: function testDatasource() {
-            var _this3 = this;
-
-            return this.load().then(function () {
-              return gapi.client.init({
-                clientId: _this3.clientId,
-                scope: _this3.scopes,
-                discoveryDocs: _this3.discoveryDocs
-              }).then(function () {
-                return { status: 'success', message: 'Data source is working', title: 'Success' };
-              });
+            return this.initialize().then(function () {
+              return { status: 'success', message: 'Data source is working', title: 'Success' };
+            }).catch(function (err) {
+              console.log(err);
+              return { status: "error", message: err.message, title: "Error" };
             });
           }
         }, {
@@ -227,7 +222,7 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
         }, {
           key: 'initialize',
           value: function initialize() {
-            var _this4 = this;
+            var _this3 = this;
 
             if (this.initialized) {
               return Promise.resolve(gapi.auth2.getAuthInstance().currentUser.get());
@@ -235,9 +230,9 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
 
             return this.load().then(function () {
               return gapi.client.init({
-                clientId: _this4.clientId,
-                scope: _this4.scopes,
-                discoveryDocs: _this4.discoveryDocs
+                clientId: _this3.clientId,
+                scope: _this3.scopes,
+                discoveryDocs: _this3.discoveryDocs
               }).then(function () {
                 var authInstance = gapi.auth2.getAuthInstance();
                 if (!authInstance) {
@@ -245,11 +240,11 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
                 }
                 var isSignedIn = authInstance.isSignedIn.get();
                 if (isSignedIn) {
-                  _this4.initialized = true;
+                  _this3.initialized = true;
                   return authInstance.currentUser.get();
                 }
                 return authInstance.signIn().then(function (user) {
-                  _this4.initialized = true;
+                  _this3.initialized = true;
                   return user;
                 });
               }, function (err) {
@@ -261,7 +256,7 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
         }, {
           key: 'performTimeSeriesQuery',
           value: function performTimeSeriesQuery(target, options) {
-            var _this5 = this;
+            var _this4 = this;
 
             target = angular.copy(target);
             var params = {};
@@ -278,12 +273,13 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
 
                   if (_.isArray(target.aggregation[key])) {
                     params['aggregation.' + key] = target.aggregation[key].map(function (aggregation) {
-                      return _this5.templateSrv.replace(aggregation, options.scopedVars || {});
+                      return _this4.templateSrv.replace(aggregation, options.scopedVars || {});
                     });
                   } else if (target.aggregation[key] !== '') {
                     params['aggregation.' + key] = this.templateSrv.replace(target.aggregation[key], options.scopedVars || {});
                   }
                 }
+                // auto period
               } catch (err) {
                 _didIteratorError2 = true;
                 _iteratorError2 = err;
@@ -297,6 +293,10 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
                     throw _iteratorError2;
                   }
                 }
+              }
+
+              if (params['aggregation.perSeriesAligner'] !== 'ALIGN_NONE' && !params['aggregation.alignmentPeriod']) {
+                params['aggregation.alignmentPeriod'] = Math.max(options.intervalMs / 1000, 60) + 's';
               }
             }
             if (target.pageToken) {
@@ -313,7 +313,7 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
                 return response;
               }
               target.pageToken = response.nextPageToken;
-              return _this5.performTimeSeriesQuery(target, options).then(function (nextResponse) {
+              return _this4.performTimeSeriesQuery(target, options).then(function (nextResponse) {
                 response = response.timeSeries.concat(nextResponse.timeSeries);
                 return response;
               });
@@ -322,7 +322,7 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
         }, {
           key: 'performMetricDescriptorsQuery',
           value: function performMetricDescriptorsQuery(target, options) {
-            var _this6 = this;
+            var _this5 = this;
 
             target = angular.copy(target);
             var params = {};
@@ -340,7 +340,7 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
                 return response;
               }
               target.pageToken = response.nextPageToken;
-              return _this6.performMetricDescriptorsQuery(target, options).then(function (nextResponse) {
+              return _this5.performMetricDescriptorsQuery(target, options).then(function (nextResponse) {
                 response = response.metricDescriptors.concat(nextResponse.metricDescriptors);
                 return response;
               });
@@ -349,7 +349,7 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
         }, {
           key: 'performGroupsQuery',
           value: function performGroupsQuery(target, options) {
-            var _this7 = this;
+            var _this6 = this;
 
             target = angular.copy(target);
             var params = {};
@@ -366,7 +366,7 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
                 return response;
               }
               target.pageToken = response.nextPageToken;
-              return _this7.performGroupsQuery(target, options).then(function (nextResponse) {
+              return _this6.performGroupsQuery(target, options).then(function (nextResponse) {
                 response = response.group.concat(nextResponse.group);
                 return response;
               });
@@ -375,7 +375,7 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
         }, {
           key: 'performGroupsMembersQuery',
           value: function performGroupsMembersQuery(target, options) {
-            var _this8 = this;
+            var _this7 = this;
 
             target = angular.copy(target);
             var params = {};
@@ -395,7 +395,7 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
                 return response;
               }
               target.pageToken = response.nextPageToken;
-              return _this8.performGroupsMembersQuery(target, options).then(function (nextResponse) {
+              return _this7.performGroupsMembersQuery(target, options).then(function (nextResponse) {
                 response = response.members.concat(nextResponse.members);
                 return response;
               });
