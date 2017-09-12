@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import moment from 'moment';
+import angular from 'angular';
 import scriptjs from './libs/script.js';
 import dateMath from 'app/core/utils/datemath';
 
@@ -24,6 +25,12 @@ export class GoogleStackdriverDatasource {
   query(options) {
     return this.initialize().then(() => {
       return Promise.all(options.targets.map(target => {
+        target = angular.copy(target);
+        let filter = 'metric.type = "' + this.templateSrv.replace(target.metricType, options.scopedVars || {}) + '"';
+        if (target.filter) {
+          filter += ' AND ' + this.templateSrv.replace(target.filter, options.scopedVars || {});
+        }
+        target.filter = filter;
         return this.performTimeSeriesQuery(target, options).then(response => {
           response.timeSeries.forEach(series => {
             series.target = target;
@@ -184,16 +191,9 @@ export class GoogleStackdriverDatasource {
 
   performTimeSeriesQuery(target, options) {
     target = angular.copy(target);
-    if (!target.metricType) {
-      return Promise.resolve({ timeSeries: [] });
-    }
-
     let params = {};
     params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
-    params.filter = 'metric.type = "' + this.templateSrv.replace(target.metricType, options.scopedVars || {}) + '"';
-    if (target.filter) {
-      params.filter += ' AND ' + this.templateSrv.replace(target.filter, options.scopedVars || {});
-    }
+    params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
     if (target.aggregation) {
       for (let key of Object.keys(target.aggregation)) {
         if (_.isArray(target.aggregation[key])) {
@@ -208,6 +208,9 @@ export class GoogleStackdriverDatasource {
       if (params['aggregation.perSeriesAligner'] !== 'ALIGN_NONE' && !params['aggregation.alignmentPeriod']) {
         params['aggregation.alignmentPeriod'] = Math.max((options.intervalMs / 1000), 60) + 's';
       }
+    }
+    if (target.view) {
+      params.view = target.view;
     }
     if (target.pageToken) {
       params.pageToken = target.pageToken;
