@@ -184,9 +184,16 @@ export class GoogleStackdriverDatasource {
 
   performTimeSeriesQuery(target, options) {
     target = angular.copy(target);
+    if (!target.metricType) {
+      return Promise.resolve({ timeSeries: [] });
+    }
+
     let params = {};
     params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
-    params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
+    params.filter = 'metric.type = "' + this.templateSrv.replace(target.metricType, options.scopedVars || {}) + '"';
+    if (target.filter) {
+      params.filter += ' AND ' + this.templateSrv.replace(target.filter, options.scopedVars || {});
+    }
     if (target.aggregation) {
       for (let key of Object.keys(target.aggregation)) {
         if (_.isArray(target.aggregation[key])) {
@@ -209,8 +216,8 @@ export class GoogleStackdriverDatasource {
     params['interval.endTime'] = this.convertTime(options.range.to, true);
     return gapi.client.monitoring.projects.timeSeries.list(params).then(response => {
       response = JSON.parse(response.body);
-      if (!response) {
-        return {};
+      if (!response.timeSeries) {
+        return { timeSeries: [] };
       }
       if (!response.nextPageToken) {
         return response;
@@ -233,8 +240,8 @@ export class GoogleStackdriverDatasource {
     }
     return gapi.client.monitoring.projects.metricDescriptors.list(params).then(response => {
       response = JSON.parse(response.body);
-      if (!response) {
-        return {};
+      if (!response.metricDescriptors) {
+        return { metricDescriptors: [] };
       }
       if (!response.nextPageToken) {
         return response;
@@ -256,8 +263,8 @@ export class GoogleStackdriverDatasource {
     }
     return gapi.client.monitoring.projects.groups.list(params).then(response => {
       response = JSON.parse(response.body);
-      if (!response) {
-        return {};
+      if (!response.group) {
+        return { group: [] };
       }
       if (!response.nextPageToken) {
         return response;
@@ -285,8 +292,8 @@ export class GoogleStackdriverDatasource {
     params['interval.endTime'] = this.convertTime(options.range.to, true);
     return gapi.client.monitoring.projects.groups.members.list(params).then(response => {
       response = JSON.parse(response.body);
-      if (!response) {
-        return {};
+      if (!response.members) {
+        return { members: [] };
       }
       if (!response.nextPageToken) {
         return response;

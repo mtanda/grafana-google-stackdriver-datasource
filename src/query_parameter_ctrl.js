@@ -19,6 +19,7 @@ angular.module('grafana.controllers').controller('GoogleStackdriverQueryParamete
     let target = $scope.target;
     target.projectId = target.projectId || '';
     target.mode = 'monitoring'; // will support logging
+    target.metricType = target.metricType || '';
     target.filter = target.filter || '';
     target.aggregation = target.aggregation || {
       perSeriesAligner: 'ALIGN_NONE',
@@ -39,6 +40,27 @@ angular.module('grafana.controllers').controller('GoogleStackdriverQueryParamete
     if (!$scope.onChange) {
       $scope.onChange = function () { };
     }
+  };
+
+  $scope.$on('typeahead-updated', () => {
+    $scope.$apply(() => {
+      $scope.onChange();
+    });
+  });
+
+  $scope.suggestMetricType = function (query, callback) {
+    if (query === '') {
+      return callback([]);
+    }
+    let params = {
+      filter: 'metric.type = starts_with("' + query + '")'
+    };
+    return $scope.datasource.performMetricDescriptorsQuery(params, {}).then(response => {
+      let metricTypes = response.metricDescriptors.map(d => {
+        return d.type;
+      });
+      return callback(metricTypes);
+    });
   };
 
   $scope.getPerSeriesAligner = function () {
