@@ -31,6 +31,7 @@ System.register(['angular', 'lodash'], function (_export, _context) {
           var target = $scope.target;
           target.projectId = target.projectId || '';
           target.mode = 'monitoring'; // will support logging
+          target.metricType = target.metricType || '';
           target.filter = target.filter || '';
           target.aggregation = target.aggregation || {
             perSeriesAligner: 'ALIGN_NONE',
@@ -51,6 +52,27 @@ System.register(['angular', 'lodash'], function (_export, _context) {
           if (!$scope.onChange) {
             $scope.onChange = function () {};
           }
+        };
+
+        $scope.$on('typeahead-updated', function () {
+          $scope.$apply(function () {
+            $scope.onChange();
+          });
+        });
+
+        $scope.suggestMetricType = function (query, callback) {
+          if (query === '') {
+            return callback([]);
+          }
+          var params = {
+            filter: 'metric.type = starts_with("' + query + '")'
+          };
+          return $scope.datasource.performMetricDescriptorsQuery(params, {}).then(function (response) {
+            var metricTypes = response.metricDescriptors.map(function (d) {
+              return d.type;
+            });
+            return callback(metricTypes);
+          });
         };
 
         $scope.getPerSeriesAligner = function () {

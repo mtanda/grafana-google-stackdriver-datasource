@@ -259,9 +259,16 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
             var _this4 = this;
 
             target = angular.copy(target);
+            if (!target.metricType) {
+              return Promise.resolve({ timeSeries: [] });
+            }
+
             var params = {};
             params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
-            params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
+            params.filter = 'metric.type = "' + this.templateSrv.replace(target.metricType, options.scopedVars || {}) + '"';
+            if (target.filter) {
+              params.filter += ' AND ' + this.templateSrv.replace(target.filter, options.scopedVars || {});
+            }
             if (target.aggregation) {
               var _iteratorNormalCompletion2 = true;
               var _didIteratorError2 = false;
@@ -306,8 +313,8 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
             params['interval.endTime'] = this.convertTime(options.range.to, true);
             return gapi.client.monitoring.projects.timeSeries.list(params).then(function (response) {
               response = JSON.parse(response.body);
-              if (!response) {
-                return {};
+              if (!response.timeSeries) {
+                return { timeSeries: [] };
               }
               if (!response.nextPageToken) {
                 return response;
@@ -333,8 +340,8 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
             }
             return gapi.client.monitoring.projects.metricDescriptors.list(params).then(function (response) {
               response = JSON.parse(response.body);
-              if (!response) {
-                return {};
+              if (!response.metricDescriptors) {
+                return { metricDescriptors: [] };
               }
               if (!response.nextPageToken) {
                 return response;
@@ -359,8 +366,8 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
             }
             return gapi.client.monitoring.projects.groups.list(params).then(function (response) {
               response = JSON.parse(response.body);
-              if (!response) {
-                return {};
+              if (!response.group) {
+                return { group: [] };
               }
               if (!response.nextPageToken) {
                 return response;
@@ -388,8 +395,8 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
             params['interval.endTime'] = this.convertTime(options.range.to, true);
             return gapi.client.monitoring.projects.groups.members.list(params).then(function (response) {
               response = JSON.parse(response.body);
-              if (!response) {
-                return {};
+              if (!response.members) {
+                return { members: [] };
               }
               if (!response.nextPageToken) {
                 return response;

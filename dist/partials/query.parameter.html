@@ -1,8 +1,15 @@
 <div class="gf-form-inline">
 	<div class="gf-form gf-form--grow">
+		<label class="gf-form-label query-keyword width-7">Metric Type</label>
+		<input type="text" class="gf-form-input" ng-model="target.metricType" spellcheck='false' bs-typeahead="suggestMetricType" placeholder="metric type" data-min-length=0 data-items=100 give-focus="target.refId == 'A'" ng-model-onblur>
+	</div>
+</div>
+
+<div class="gf-form-inline">
+	<div class="gf-form gf-form--grow">
 		<label class="gf-form-label query-keyword width-7">Filter</label>
 		<textarea rows="1" class="gf-form-input" ng-model="target.filter" spellcheck="false" placeholder="filter expression"
-		 data-min-length=0 data-items=100 give-focus="target.refId == 'A'" ng-model-onblur ng-change="onChange()"></textarea>
+		 data-min-length=0 data-items=100 ng-model-onblur ng-change="onChange()"></textarea>
 	</div>
 </div>
 
