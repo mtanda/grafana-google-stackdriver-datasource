@@ -8,8 +8,9 @@
 <div class="gf-form-inline">
 	<div class="gf-form gf-form--grow">
 		<label class="gf-form-label query-keyword width-7">Filter</label>
-		<textarea rows="1" class="gf-form-input" ng-model="target.filter" spellcheck="false" placeholder="filter expression"
-		 data-min-length=0 data-items=100 ng-model-onblur ng-change="onChange()"></textarea>
+		<code-editor content="target.filter" datasource="datasource" on-change="onChange()"
+			get-completer="getCompleter()" data-mode="stackdriver" code-editor-focus="isLastQuery">
+		</code-editor>
 	</div>
 </div>
 
