@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemath'], function (_export, _context) {
+System.register(['lodash', 'moment', 'angular', './libs/script.js', 'app/core/utils/datemath'], function (_export, _context) {
   "use strict";
 
-  var _, moment, scriptjs, dateMath, _createClass, GoogleStackdriverDatasource;
+  var _, moment, angular, scriptjs, dateMath, _createClass, GoogleStackdriverDatasource;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -16,6 +16,8 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
       _ = _lodash.default;
     }, function (_moment) {
       moment = _moment.default;
+    }, function (_angular) {
+      angular = _angular.default;
     }, function (_libsScriptJs) {
       scriptjs = _libsScriptJs.default;
     }, function (_appCoreUtilsDatemath) {
@@ -66,6 +68,12 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
 
             return this.initialize().then(function () {
               return Promise.all(options.targets.map(function (target) {
+                target = angular.copy(target);
+                var filter = 'metric.type = "' + _this.templateSrv.replace(target.metricType, options.scopedVars || {}) + '"';
+                if (target.filter) {
+                  filter += ' AND ' + _this.templateSrv.replace(target.filter, options.scopedVars || {});
+                }
+                target.filter = filter;
                 return _this.performTimeSeriesQuery(target, options).then(function (response) {
                   response.timeSeries.forEach(function (series) {
                     series.target = target;
@@ -259,16 +267,9 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
             var _this4 = this;
 
             target = angular.copy(target);
-            if (!target.metricType) {
-              return Promise.resolve({ timeSeries: [] });
-            }
-
             var params = {};
             params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
-            params.filter = 'metric.type = "' + this.templateSrv.replace(target.metricType, options.scopedVars || {}) + '"';
-            if (target.filter) {
-              params.filter += ' AND ' + this.templateSrv.replace(target.filter, options.scopedVars || {});
-            }
+            params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
             if (target.aggregation) {
               var _iteratorNormalCompletion2 = true;
               var _didIteratorError2 = false;
@@ -305,6 +306,9 @@ System.register(['lodash', 'moment', './libs/script.js', 'app/core/utils/datemat
               if (params['aggregation.perSeriesAligner'] !== 'ALIGN_NONE' && !params['aggregation.alignmentPeriod']) {
                 params['aggregation.alignmentPeriod'] = Math.max(options.intervalMs / 1000, 60) + 's';
               }
+            }
+            if (target.view) {
+              params.view = target.view;
             }
             if (target.pageToken) {
               params.pageToken = target.pageToken;

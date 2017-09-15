@@ -52,7 +52,7 @@ module.exports = function(grunt) {
         files: [{
           cwd: 'src',
           expand: true,
-          src: ['**/libs/script.js'],
+          src: ['**/libs/script.js', '**/mode-stackdriver.js', '**/snippets/stackdriver.js'],
           dest: 'dist',
           ext:'.js'
         }]

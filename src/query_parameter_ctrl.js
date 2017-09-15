@@ -1,5 +1,6 @@
 import angular from 'angular';
 import _ from 'lodash';
+import {StackdriverCompleter} from './completer';
 
 angular.module('grafana.directives').directive('googleStackdriverQueryParameter', () => {
   return {
@@ -9,6 +10,7 @@ angular.module('grafana.directives').directive('googleStackdriverQueryParameter'
     scope: {
       target: "=",
       datasource: "=",
+      isLastQuery: "=",
       onChange: "&",
     }
   };
@@ -40,6 +42,10 @@ angular.module('grafana.controllers').controller('GoogleStackdriverQueryParamete
     if (!$scope.onChange) {
       $scope.onChange = function () { };
     }
+  };
+
+  $scope.getCompleter = function (query) {
+    return new StackdriverCompleter(this.datasource, timeSrv, $scope.target);
   };
 
   $scope.$on('typeahead-updated', () => {

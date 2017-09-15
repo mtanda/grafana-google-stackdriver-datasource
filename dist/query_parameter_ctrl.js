@@ -1,15 +1,17 @@
 'use strict';
 
-System.register(['angular', 'lodash'], function (_export, _context) {
+System.register(['angular', 'lodash', './completer'], function (_export, _context) {
   "use strict";
 
-  var angular, _;
+  var angular, _, StackdriverCompleter;
 
   return {
     setters: [function (_angular) {
       angular = _angular.default;
     }, function (_lodash) {
       _ = _lodash.default;
+    }, function (_completer) {
+      StackdriverCompleter = _completer.StackdriverCompleter;
     }],
     execute: function () {
 
@@ -21,6 +23,7 @@ System.register(['angular', 'lodash'], function (_export, _context) {
           scope: {
             target: "=",
             datasource: "=",
+            isLastQuery: "=",
             onChange: "&"
           }
         };
@@ -52,6 +55,10 @@ System.register(['angular', 'lodash'], function (_export, _context) {
           if (!$scope.onChange) {
             $scope.onChange = function () {};
           }
+        };
+
+        $scope.getCompleter = function (query) {
+          return new StackdriverCompleter(this.datasource, timeSrv, $scope.target);
         };
 
         $scope.$on('typeahead-updated', function () {
