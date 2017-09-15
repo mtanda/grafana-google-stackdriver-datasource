@@ -73,7 +73,7 @@ System.register(['./datasource', 'lodash'], function (_export, _context) {
                 });
                 return;
               case 'string.quoted':
-                var keywordOperatorToken = this.findToken(session, pos.row, pos.column, 'keyword.operator', null, 'paren.lparen');
+                var keywordOperatorToken = this.findToken(session, pos.row, pos.column, 'keyword.operator', null, 'keyword');
                 if (!keywordOperatorToken) {
                   callback(null, []);
                   return;
@@ -81,7 +81,7 @@ System.register(['./datasource', 'lodash'], function (_export, _context) {
 
                 var filterKey;
                 var tokens = session.getTokens(keywordOperatorToken.row);
-                var filterKeyToken = this.findToken(session, pos.row, pos.column, 'identifier', null, 'paren.lparen');
+                var filterKeyToken = this.findToken(session, pos.row, pos.column, 'identifier', null, 'keyword');
                 if (filterKeyToken && keywordOperatorToken.index - filterKeyToken.index <= 2) {
                   filterKey = filterKeyToken.value;
                 } else {
