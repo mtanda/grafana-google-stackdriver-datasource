@@ -115,6 +115,11 @@ ace.define("ace/mode/stackdriver_completions", ["require", "exports", "module", 
 
   (function () {
     this.getCompletions = function (state, session, pos, prefix, callback) {
+      var token = session.getTokenAt(pos.row, pos.column);
+      if (token.type === 'identifier' || token.type === 'string.quoted') {
+        return callback(null, []);
+      }
+
       var completions = keyWordsCompletions;
       callback(null, completions);
     };
