@@ -12,7 +12,7 @@ module.exports = function(grunt) {
       dist_js: {
         expand: true,
         cwd: 'src',
-        src: ['**/*.ts', '**/*.d.ts'],
+        src: ['**/*.ts', '**/*.d.ts', '**/*.js'],
         dest: 'dist'
       },
       dist_html: {
