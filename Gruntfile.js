@@ -15,13 +15,6 @@ module.exports = function(grunt) {
         src: ['**/*.ts', '**/*.d.ts'],
         dest: 'dist'
       },
-      dist_libs: {
-        expand: true,
-        flatten: true,
-        cwd: 'src/libs',
-        src: ['*.*'],
-        dest: 'dist/libs/'
-      },
       dist_html: {
         expand: true,
         flatten: true,
@@ -80,7 +73,6 @@ module.exports = function(grunt) {
   grunt.registerTask('default', [
     'clean',
     'copy:dist_js',
-    'copy:dist_libs',
     'typescript:build',
     'copy:dist_html',
     'copy:dist_css',

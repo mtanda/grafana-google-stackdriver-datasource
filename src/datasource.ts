@@ -3,10 +3,16 @@
 import _ from 'lodash';
 import moment from 'moment';
 import angular from 'angular';
-import scriptjs from './libs/script.js';
 import * as dateMath from 'app/core/utils/datemath';
 
-var gapi:any;
+System.config({
+  meta: {
+    'https://apis.google.com/js/api.js': {
+      exports: 'gapi',
+      format: 'global'
+    }
+  }
+});
 
 export default class GoogleStackdriverDatasource {
   type: string;
@@ -16,6 +22,7 @@ export default class GoogleStackdriverDatasource {
   scopes: any;
   discoveryDocs: any;
   initialized: boolean;
+  gapi: any;
 
   /** @ngInject */
   constructor(instanceSettings, private $q, private templateSrv, private timeSrv) {
@@ -160,8 +167,9 @@ export default class GoogleStackdriverDatasource {
 
   load() {
     let deferred = this.$q.defer();
-    scriptjs('https://apis.google.com/js/api.js', () => {
-      gapi.load('client:auth2', () => {
+    System.import('https://apis.google.com/js/api.js').then((gapi) => {
+      this.gapi = gapi;
+      this.gapi.load('client:auth2', () => {
         return deferred.resolve();
       });
     });
@@ -170,16 +178,16 @@ export default class GoogleStackdriverDatasource {
 
   initialize() {
     if (this.initialized) {
-      return Promise.resolve(gapi.auth2.getAuthInstance().currentUser.get());
+      return Promise.resolve(this.gapi.auth2.getAuthInstance().currentUser.get());
     }
 
     return this.load().then(() => {
-      return gapi.client.init({
+      return this.gapi.client.init({
         clientId: this.clientId,
         scope: this.scopes,
         discoveryDocs: this.discoveryDocs
       }).then(() => {
-        let authInstance = gapi.auth2.getAuthInstance();
+        let authInstance = this.gapi.auth2.getAuthInstance();
         if (!authInstance) {
           throw { message: 'failed to initialize' };
         }
@@ -227,7 +235,7 @@ export default class GoogleStackdriverDatasource {
     }
     params['interval.startTime'] = this.convertTime(options.range.from, false);
     params['interval.endTime'] = this.convertTime(options.range.to, true);
-    return gapi.client.monitoring.projects.timeSeries.list(params).then(response => {
+    return this.gapi.client.monitoring.projects.timeSeries.list(params).then(response => {
       response = JSON.parse(response.body);
       if (!response.timeSeries) {
         return { timeSeries: [] };
@@ -251,7 +259,7 @@ export default class GoogleStackdriverDatasource {
     if (target.pageToken) {
       params.pageToken = target.pageToken;
     }
-    return gapi.client.monitoring.projects.metricDescriptors.list(params).then(response => {
+    return this.gapi.client.monitoring.projects.metricDescriptors.list(params).then(response => {
       response = JSON.parse(response.body);
       if (!response.metricDescriptors) {
         return { metricDescriptors: [] };
@@ -274,7 +282,7 @@ export default class GoogleStackdriverDatasource {
     if (target.pageToken) {
       params.pageToken = target.pageToken;
     }
-    return gapi.client.monitoring.projects.groups.list(params).then(response => {
+    return this.gapi.client.monitoring.projects.groups.list(params).then(response => {
       response = JSON.parse(response.body);
       if (!response.group) {
         return { group: [] };
@@ -303,7 +311,7 @@ export default class GoogleStackdriverDatasource {
     }
     params['interval.startTime'] = this.convertTime(options.range.from, false);
     params['interval.endTime'] = this.convertTime(options.range.to, true);
-    return gapi.client.monitoring.projects.groups.members.list(params).then(response => {
+    return this.gapi.client.monitoring.projects.groups.members.list(params).then(response => {
       response = JSON.parse(response.body);
       if (!response.members) {
         return { members: [] };
