@@ -1,11 +1,31 @@
+///<reference path="../node_modules/grafana-sdk-mocks/app/headers/common.d.ts" />
+
 import _ from 'lodash';
 import moment from 'moment';
 import angular from 'angular';
-import scriptjs from './libs/script.js';
-import dateMath from 'app/core/utils/datemath';
+import * as dateMath from 'app/core/utils/datemath';
 
-export class GoogleStackdriverDatasource {
-  constructor(instanceSettings, $q, templateSrv, timeSrv) {
+System.config({
+  meta: {
+    'https://apis.google.com/js/api.js': {
+      exports: 'gapi',
+      format: 'global'
+    }
+  }
+});
+
+export default class GoogleStackdriverDatasource {
+  type: string;
+  name: string;
+  clientId: string;
+  defaultProjectId: string;
+  scopes: any;
+  discoveryDocs: any;
+  initialized: boolean;
+  gapi: any;
+
+  /** @ngInject */
+  constructor(instanceSettings, private $q, private templateSrv, private timeSrv) {
     this.type = instanceSettings.type;
     this.name = instanceSettings.name;
     this.clientId = instanceSettings.jsonData.clientId;
@@ -17,9 +37,6 @@ export class GoogleStackdriverDatasource {
     ].join(' ');
     this.discoveryDocs = [ "https://monitoring.googleapis.com/$discovery/rest?version=v3" ];
     this.initialized = false;
-    this.q = $q;
-    this.templateSrv = templateSrv;
-    this.timeSrv = timeSrv;
   }
 
   query(options) {
@@ -37,7 +54,7 @@ export class GoogleStackdriverDatasource {
           });
           return response;
         });
-      })).then(responses => {
+      })).then((responses: any) => {
         let timeSeries = _.flatten(responses.filter(response => {
           return !!response.timeSeries;
         }).map(response => {
@@ -77,7 +94,7 @@ export class GoogleStackdriverDatasource {
         filter: filter
       };
       return this.performMetricDescriptorsQuery(params, {}).then(response => {
-        return this.q.when(response.metricDescriptors.map(d => {
+        return this.$q.when(response.metricDescriptors.map(d => {
           return { text: d.type };
         }));
       });
@@ -95,7 +112,7 @@ export class GoogleStackdriverDatasource {
       };
       return this.performTimeSeriesQuery(params, { range: this.timeSrv.timeRange() }).then(response => {
         let valuePicker = _.property(targetProperty);
-        return this.q.when(response.timeSeries.map(d => {
+        return this.$q.when(response.timeSeries.map(d => {
           return { text: valuePicker(d) };
         }));
       });
@@ -108,7 +125,7 @@ export class GoogleStackdriverDatasource {
         projectId: projectId
       };
       return this.performGroupsQuery(params, {}).then(response => {
-        return this.q.when(response.group.map(d => {
+        return this.$q.when(response.group.map(d => {
           return {
             //text: d.displayName
             text: d.name.split('/')[3]
@@ -130,13 +147,13 @@ export class GoogleStackdriverDatasource {
       };
       return this.performGroupsMembersQuery(params, { range: this.timeSrv.timeRange() }).then(response => {
         let valuePicker = _.property(targetProperty);
-        return this.q.when(response.members.map(d => {
+        return this.$q.when(response.members.map(d => {
           return { text: valuePicker(d) };
         }));
       });
     }
 
-    return this.q.when([]);
+    return this.$q.when([]);
   }
 
   testDatasource() {
@@ -149,9 +166,10 @@ export class GoogleStackdriverDatasource {
   }
 
   load() {
-    let deferred = this.q.defer();
-    scriptjs('https://apis.google.com/js/api.js', () => {
-      gapi.load('client:auth2', () => {
+    let deferred = this.$q.defer();
+    System.import('https://apis.google.com/js/api.js').then((gapi) => {
+      this.gapi = gapi;
+      this.gapi.load('client:auth2', () => {
         return deferred.resolve();
       });
     });
@@ -160,16 +178,16 @@ export class GoogleStackdriverDatasource {
 
   initialize() {
     if (this.initialized) {
-      return Promise.resolve(gapi.auth2.getAuthInstance().currentUser.get());
+      return Promise.resolve(this.gapi.auth2.getAuthInstance().currentUser.get());
     }
 
     return this.load().then(() => {
-      return gapi.client.init({
+      return this.gapi.client.init({
         clientId: this.clientId,
         scope: this.scopes,
         discoveryDocs: this.discoveryDocs
       }).then(() => {
-        let authInstance = gapi.auth2.getAuthInstance();
+        let authInstance = this.gapi.auth2.getAuthInstance();
         if (!authInstance) {
           throw { message: 'failed to initialize' };
         }
@@ -191,7 +209,7 @@ export class GoogleStackdriverDatasource {
 
   performTimeSeriesQuery(target, options) {
     target = angular.copy(target);
-    let params = {};
+    let params: any = {};
     params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
     params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
     if (target.aggregation) {
@@ -217,7 +235,7 @@ export class GoogleStackdriverDatasource {
     }
     params['interval.startTime'] = this.convertTime(options.range.from, false);
     params['interval.endTime'] = this.convertTime(options.range.to, true);
-    return gapi.client.monitoring.projects.timeSeries.list(params).then(response => {
+    return this.gapi.client.monitoring.projects.timeSeries.list(params).then(response => {
       response = JSON.parse(response.body);
       if (!response.timeSeries) {
         return { timeSeries: [] };
@@ -235,13 +253,13 @@ export class GoogleStackdriverDatasource {
 
   performMetricDescriptorsQuery(target, options) {
     target = angular.copy(target);
-    let params = {};
+    let params: any = {};
     params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
     params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
     if (target.pageToken) {
       params.pageToken = target.pageToken;
     }
-    return gapi.client.monitoring.projects.metricDescriptors.list(params).then(response => {
+    return this.gapi.client.monitoring.projects.metricDescriptors.list(params).then(response => {
       response = JSON.parse(response.body);
       if (!response.metricDescriptors) {
         return { metricDescriptors: [] };
@@ -259,12 +277,12 @@ export class GoogleStackdriverDatasource {
 
   performGroupsQuery(target, options) {
     target = angular.copy(target);
-    let params = {};
+    let params: any = {};
     params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
     if (target.pageToken) {
       params.pageToken = target.pageToken;
     }
-    return gapi.client.monitoring.projects.groups.list(params).then(response => {
+    return this.gapi.client.monitoring.projects.groups.list(params).then(response => {
       response = JSON.parse(response.body);
       if (!response.group) {
         return { group: [] };
@@ -282,7 +300,7 @@ export class GoogleStackdriverDatasource {
 
   performGroupsMembersQuery(target, options) {
     target = angular.copy(target);
-    let params = {};
+    let params: any = {};
     params.name = this.templateSrv.replace('projects/'
      + (target.projectId || this.defaultProjectId)
      + '/groups/'
@@ -293,7 +311,7 @@ export class GoogleStackdriverDatasource {
     }
     params['interval.startTime'] = this.convertTime(options.range.from, false);
     params['interval.endTime'] = this.convertTime(options.range.to, true);
-    return gapi.client.monitoring.projects.groups.members.list(params).then(response => {
+    return this.gapi.client.monitoring.projects.groups.members.list(params).then(response => {
       response = JSON.parse(response.body);
       if (!response.members) {
         return { members: [] };

@@ -1,35 +1,25 @@
-'use strict';
-
-System.register(['./datasource', './query_ctrl'], function (_export, _context) {
-  "use strict";
-
-  var GoogleStackdriverDatasource, GoogleStackdriverQueryCtrl, GoogleStackdriverConfigCtrl;
-
-  function _classCallCheck(instance, Constructor) {
-    if (!(instance instanceof Constructor)) {
-      throw new TypeError("Cannot call a class as a function");
+System.register(['./datasource', './query_ctrl'], function(exports_1) {
+    var datasource_1, query_ctrl_1;
+    var GoogleStackdriverConfigCtrl;
+    return {
+        setters:[
+            function (datasource_1_1) {
+                datasource_1 = datasource_1_1;
+            },
+            function (query_ctrl_1_1) {
+                query_ctrl_1 = query_ctrl_1_1;
+            }],
+        execute: function() {
+            GoogleStackdriverConfigCtrl = (function () {
+                function GoogleStackdriverConfigCtrl() {
+                }
+                GoogleStackdriverConfigCtrl.templateUrl = 'partials/config.html';
+                return GoogleStackdriverConfigCtrl;
+            })();
+            exports_1("Datasource", datasource_1.default);
+            exports_1("ConfigCtrl", GoogleStackdriverConfigCtrl);
+            exports_1("QueryCtrl", query_ctrl_1.GoogleStackdriverQueryCtrl);
+        }
     }
-  }
-
-  return {
-    setters: [function (_datasource) {
-      GoogleStackdriverDatasource = _datasource.GoogleStackdriverDatasource;
-    }, function (_query_ctrl) {
-      GoogleStackdriverQueryCtrl = _query_ctrl.GoogleStackdriverQueryCtrl;
-    }],
-    execute: function () {
-      _export('ConfigCtrl', GoogleStackdriverConfigCtrl = function GoogleStackdriverConfigCtrl() {
-        _classCallCheck(this, GoogleStackdriverConfigCtrl);
-      });
-
-      GoogleStackdriverConfigCtrl.templateUrl = 'partials/config.html';
-
-      _export('Datasource', GoogleStackdriverDatasource);
-
-      _export('ConfigCtrl', GoogleStackdriverConfigCtrl);
-
-      _export('QueryCtrl', GoogleStackdriverQueryCtrl);
-    }
-  };
 });
 //# sourceMappingURL=module.js.map

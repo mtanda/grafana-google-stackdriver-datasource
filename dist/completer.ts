@@ -1,10 +1,17 @@
-import {StackdriverDatasource} from "./datasource";
+///<reference path="../node_modules/grafana-sdk-mocks/app/headers/common.d.ts" />
+
+import GoogleStackdriverDatasource from "./datasource";
 import _ from 'lodash';
 
-export class StackdriverCompleter {
-  constructor(datasource, timeSrv, target) {
+export default class GoogleStackdriverCompleter {
+  datasource: any;
+  target: any;
+  filterQueryCache: any;
+  filterKeyCache: any;
+  filterValueCache: any;
+
+  constructor(datasource, private timeSrv, target) {
     this.datasource = datasource;
-    this.timeSrv = timeSrv;
     this.target = target;
     this.filterQueryCache = {};
     this.filterKeyCache = {};

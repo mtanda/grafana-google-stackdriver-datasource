@@ -1,6 +1,8 @@
+///<reference path="../node_modules/grafana-sdk-mocks/app/headers/common.d.ts" />
+
 import angular from 'angular';
 import _ from 'lodash';
-import {StackdriverCompleter} from './completer';
+import GoogleStackdriverCompleter from './completer';
 
 angular.module('grafana.directives').directive('googleStackdriverQueryParameter', () => {
   return {
@@ -45,7 +47,7 @@ angular.module('grafana.controllers').controller('GoogleStackdriverQueryParamete
   };
 
   $scope.getCompleter = function (query) {
-    return new StackdriverCompleter(this.datasource, timeSrv, $scope.target);
+    return new GoogleStackdriverCompleter(this.datasource, timeSrv, $scope.target);
   };
 
   $scope.$on('typeahead-updated', () => {
