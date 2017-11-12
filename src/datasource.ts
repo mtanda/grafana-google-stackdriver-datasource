@@ -1,11 +1,24 @@
+///<reference path="../node_modules/grafana-sdk-mocks/app/headers/common.d.ts" />
+
 import _ from 'lodash';
 import moment from 'moment';
 import angular from 'angular';
 import scriptjs from './libs/script.js';
-import dateMath from 'app/core/utils/datemath';
+import * as dateMath from 'app/core/utils/datemath';
 
-export class GoogleStackdriverDatasource {
-  constructor(instanceSettings, $q, templateSrv, timeSrv) {
+var gapi:any;
+
+export default class GoogleStackdriverDatasource {
+  type: string;
+  name: string;
+  clientId: string;
+  defaultProjectId: string;
+  scopes: any;
+  discoveryDocs: any;
+  initialized: boolean;
+
+  /** @ngInject */
+  constructor(instanceSettings, private $q, private templateSrv, private timeSrv) {
     this.type = instanceSettings.type;
     this.name = instanceSettings.name;
     this.clientId = instanceSettings.jsonData.clientId;
@@ -17,9 +30,6 @@ export class GoogleStackdriverDatasource {
     ].join(' ');
     this.discoveryDocs = [ "https://monitoring.googleapis.com/$discovery/rest?version=v3" ];
     this.initialized = false;
-    this.q = $q;
-    this.templateSrv = templateSrv;
-    this.timeSrv = timeSrv;
   }
 
   query(options) {
@@ -37,7 +47,7 @@ export class GoogleStackdriverDatasource {
           });
           return response;
         });
-      })).then(responses => {
+      })).then((responses: any) => {
         let timeSeries = _.flatten(responses.filter(response => {
           return !!response.timeSeries;
         }).map(response => {
@@ -77,7 +87,7 @@ export class GoogleStackdriverDatasource {
         filter: filter
       };
       return this.performMetricDescriptorsQuery(params, {}).then(response => {
-        return this.q.when(response.metricDescriptors.map(d => {
+        return this.$q.when(response.metricDescriptors.map(d => {
           return { text: d.type };
         }));
       });
@@ -95,7 +105,7 @@ export class GoogleStackdriverDatasource {
       };
       return this.performTimeSeriesQuery(params, { range: this.timeSrv.timeRange() }).then(response => {
         let valuePicker = _.property(targetProperty);
-        return this.q.when(response.timeSeries.map(d => {
+        return this.$q.when(response.timeSeries.map(d => {
           return { text: valuePicker(d) };
         }));
       });
@@ -108,7 +118,7 @@ export class GoogleStackdriverDatasource {
         projectId: projectId
       };
       return this.performGroupsQuery(params, {}).then(response => {
-        return this.q.when(response.group.map(d => {
+        return this.$q.when(response.group.map(d => {
           return {
             //text: d.displayName
             text: d.name.split('/')[3]
@@ -130,13 +140,13 @@ export class GoogleStackdriverDatasource {
       };
       return this.performGroupsMembersQuery(params, { range: this.timeSrv.timeRange() }).then(response => {
         let valuePicker = _.property(targetProperty);
-        return this.q.when(response.members.map(d => {
+        return this.$q.when(response.members.map(d => {
           return { text: valuePicker(d) };
         }));
       });
     }
 
-    return this.q.when([]);
+    return this.$q.when([]);
   }
 
   testDatasource() {
@@ -149,7 +159,7 @@ export class GoogleStackdriverDatasource {
   }
 
   load() {
-    let deferred = this.q.defer();
+    let deferred = this.$q.defer();
     scriptjs('https://apis.google.com/js/api.js', () => {
       gapi.load('client:auth2', () => {
         return deferred.resolve();
@@ -191,7 +201,7 @@ export class GoogleStackdriverDatasource {
 
   performTimeSeriesQuery(target, options) {
     target = angular.copy(target);
-    let params = {};
+    let params: any = {};
     params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
     params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
     if (target.aggregation) {
@@ -235,7 +245,7 @@ export class GoogleStackdriverDatasource {
 
   performMetricDescriptorsQuery(target, options) {
     target = angular.copy(target);
-    let params = {};
+    let params: any = {};
     params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
     params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
     if (target.pageToken) {
@@ -259,7 +269,7 @@ export class GoogleStackdriverDatasource {
 
   performGroupsQuery(target, options) {
     target = angular.copy(target);
-    let params = {};
+    let params: any = {};
     params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
     if (target.pageToken) {
       params.pageToken = target.pageToken;
@@ -282,7 +292,7 @@ export class GoogleStackdriverDatasource {
 
   performGroupsMembersQuery(target, options) {
     target = angular.copy(target);
-    let params = {};
+    let params: any = {};
     params.name = this.templateSrv.replace('projects/'
      + (target.projectId || this.defaultProjectId)
      + '/groups/'
