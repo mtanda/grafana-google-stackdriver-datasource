@@ -1,6 +1,7 @@
 ///<reference path="../node_modules/grafana-sdk-mocks/app/headers/common.d.ts" />
 
 import './query_parameter_ctrl';
+import './mode-stackdriver';
 import _ from 'lodash';
 import {QueryCtrl} from 'app/plugins/sdk';
 
