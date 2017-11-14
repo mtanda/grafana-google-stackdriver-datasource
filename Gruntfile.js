@@ -61,6 +61,25 @@ module.exports = function(grunt) {
       }
     },
 
+    babel: {
+      options: {
+        sourceMap: true,
+        presets: ['es2015']
+      },
+      dist: {
+        options: {
+          plugins: ['transform-es2015-modules-systemjs', 'transform-es2015-for-of']
+        },
+        files: [{
+          cwd: 'src',
+          expand: true,
+          src: ['**/*.js'],
+          dest: 'dist',
+          ext:'.js'
+        }]
+      }
+    },
+
     watch: {
       files: ['src/**/*.ts', 'src/**/*.html', 'src/**/*.css', 'src/img/*.*', 'src/plugin.json', 'README.md', 'src/query_help.md'],
       tasks: ['default'],
@@ -74,6 +93,7 @@ module.exports = function(grunt) {
     'clean',
     'copy:dist_js',
     'typescript:build',
+    'babel',
     'copy:dist_html',
     'copy:dist_css',
     'copy:dist_img',
