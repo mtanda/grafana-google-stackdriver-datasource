@@ -75,6 +75,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath'], function(expor
                                         var point = _a[_i];
                                         datapoints.push([point.value[valueKey], Date.parse(point.interval.endTime).valueOf()]);
                                     }
+                                    datapoints.reverse();
                                     return { target: metricLabel, datapoints: datapoints };
                                 })
                             };
