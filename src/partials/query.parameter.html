@@ -11,6 +11,20 @@
 		<code-editor content="target.filter" datasource="datasource" on-change="onChange()"
 			get-completer="getCompleter()" data-mode="stackdriver" code-editor-focus="isLastQuery">
 		</code-editor>
+		<info-popover mode="right-absolute">
+			Filter operators:
+			<ul ng-non-bindable>
+				<li> ":" substring match (case-sensitive)</li>
+				<li> "=" equality (case-sensitive)</li>
+			</ul>
+			Filter string functions:
+			<ul ng-non-bindable>
+				<li>starts_with()</li>
+				<li>ends_with()</li>
+				<li>has_substring()</li>
+				<li>one_of()</li>
+			</ul>
+		</info-popover>
 	</div>
 </div>
 
