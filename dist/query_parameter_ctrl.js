@@ -151,7 +151,6 @@ System.register(['angular', 'lodash', './completer'], function(exports_1) {
                             delete (d.points);
                             return getAllFieldPaths(d);
                         }))).map(function (f) {
-                            f = f.replace(/\.labels\./, '.label.');
                             return uiSegmentSrv.newSegment({ value: f, expandable: false });
                         });
                         fields.push(angular_1.default.copy($scope.removeGroupByFieldsSegment));

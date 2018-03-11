@@ -152,7 +152,6 @@ angular.module('grafana.controllers').controller('GoogleStackdriverQueryParamete
         delete(d.points);
         return getAllFieldPaths(d);
       }))).map(f => {
-        f = f.replace(/\.labels\./, '.label.');
         return uiSegmentSrv.newSegment({ value: f, expandable: false });
       });
       fields.push(angular.copy($scope.removeGroupByFieldsSegment));
