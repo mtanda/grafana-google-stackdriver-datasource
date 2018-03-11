@@ -142,9 +142,13 @@ angular.module('grafana.controllers').controller('GoogleStackdriverQueryParamete
   }
 
   $scope.getGroupByFieldsSegments = function () {
+    let filter = $scope.target.metricType;
+    if ($scope.target.filter) {
+      filter += " AND " + $scope.target.filter;
+    }
     let params = {
       projectId: $scope.target.projectId || $scope.datasource.defaultProjectId,
-      filter: $scope.target.filter,
+      filter: filter,
       view: 'HEADERS'
     };
     return $scope.datasource.performTimeSeriesQuery(params, { range: timeSrv.timeRange() }).then(response => {
