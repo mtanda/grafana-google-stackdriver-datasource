@@ -24,6 +24,11 @@
 				<li>has_substring()</li>
 				<li>one_of()</li>
 			</ul>
+			Examples:
+			<ul ng-non-bindable>
+				<li>metric.type : "compute"</li>
+				<li>metric.type = ends_with("name")</li>
+			</ul>
 		</info-popover>
 	</div>
 </div>
@@ -67,6 +72,11 @@
 			<ul ng-non-bindable>
 				<li>{{metric.key1.key2}}</li>
 				<li>{{resource.key1.key2}}</li>
+			</ul>
+			Examples:
+			<ul ng-non-bindable>
+				<li>Server {{metric.labels.instance_name}}</li>
+				<li>{{resource.type}} - {{metric.type}}</li>
 			</ul>
 		</info-popover>
 	</div>
