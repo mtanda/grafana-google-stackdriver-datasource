@@ -142,7 +142,7 @@ angular.module('grafana.controllers').controller('GoogleStackdriverQueryParamete
   }
 
   $scope.getGroupByFieldsSegments = function () {
-    let filter = $scope.target.metricType;
+    let filter = "metric.type = " + $scope.target.metricType;
     if ($scope.target.filter) {
       filter += " AND " + $scope.target.filter;
     }
