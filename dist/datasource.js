@@ -54,7 +54,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath'], function(expor
                                 response.timeSeries.forEach(function (series) {
                                     series.target = target;
                                 });
-                                return response;
+                                return _this.filterSeries(target, response);
                             });
                         })).then(function (responses) {
                             var timeSeries = lodash_1.default.flatten(responses.filter(function (response) {
@@ -325,6 +325,68 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath'], function(expor
                             return response;
                         });
                     });
+                };
+                GoogleStackdriverDatasource.prototype.filterSeries = function (target, response) {
+                    var _this = this;
+                    if (!lodash_1.default.has(target, 'seriesFilter') ||
+                        target.seriesFilter.mode === 'NONE' ||
+                        target.seriesFilter.type === 'NONE' ||
+                        target.seriesFilter.param === '') {
+                        return response;
+                    }
+                    var param = lodash_1.default.toNumber(target.seriesFilter.param);
+                    if (lodash_1.default.isNaN(param))
+                        return response;
+                    response.timeSeries.forEach(function (series) {
+                        series['filterValue'] = _this.getSeriesFilterValue(target, series);
+                    });
+                    switch (target.seriesFilter.mode) {
+                        case "TOP":
+                            response.timeSeries.sort(function (a, b) {
+                                return b.filterValue - a.filterValue;
+                            });
+                            response.timeSeries = response.timeSeries.slice(0, param);
+                            return response;
+                        case "BOTTOM":
+                            response.timeSeries.sort(function (a, b) {
+                                return a.filterValue - b.filterValue;
+                            });
+                            response.timeSeries = response.timeSeries.slice(0, param);
+                            return response;
+                        case "BELOW":
+                            response.timeSeries = response.timeSeries.filter(function (elem) {
+                                return elem.filterValue < param;
+                            });
+                            return response;
+                        case "ABOVE":
+                            response.timeSeries = response.timeSeries.filter(function (elem) {
+                                return elem.filterValue > param;
+                            });
+                            return response;
+                    }
+                };
+                GoogleStackdriverDatasource.prototype.getSeriesFilterValue = function (target, series) {
+                    var valueKey = series.valueType.toLowerCase() + 'Value';
+                    switch (target.seriesFilter.type) {
+                        case "MAX":
+                            return series.points.reduce(function (acc, elem) {
+                                return Math.max(acc, elem.value[valueKey]);
+                            }, Number.MIN_VALUE);
+                        case "MIN":
+                            return series.points.reduce(function (acc, elem) {
+                                return Math.min(acc, elem.value[valueKey]);
+                            }, Number.MAX_VALUE);
+                        case "AVERAGE":
+                            if (series.points.length == 0)
+                                return 0;
+                            return series.points.reduce(function (acc, elem) {
+                                return acc + elem.value[valueKey];
+                            }, 0) / series.points.length;
+                        case "CURRENT":
+                            if (series.points.length == 0)
+                                return 0;
+                            return series.points[0].value[valueKey];
+                    }
                 };
                 GoogleStackdriverDatasource.prototype.getMetricLabel = function (aliasPattern, series) {
                     var aliasRegex = /\{\{(.+?)\}\}/g;

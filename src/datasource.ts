@@ -52,7 +52,7 @@ export default class GoogleStackdriverDatasource {
           response.timeSeries.forEach(series => {
             series.target = target;
           });
-          return response;
+          return this.filterSeries(target, response);
         });
       })).then((responses: any) => {
         let timeSeries = _.flatten(responses.filter(response => {
@@ -327,6 +327,69 @@ export default class GoogleStackdriverDatasource {
         return response;
       });
     });
+  }
+
+  filterSeries(target, response) {
+    if (!_.has(target, 'seriesFilter') ||
+        target.seriesFilter.mode === 'NONE' ||
+        target.seriesFilter.type === 'NONE' ||
+        target.seriesFilter.param === '') {
+      return response;
+    }
+
+    let param = _.toNumber(target.seriesFilter.param);
+    if (_.isNaN(param)) return response;
+
+    response.timeSeries.forEach(series => {
+      series['filterValue'] = this.getSeriesFilterValue(target, series);
+    });
+
+    switch(target.seriesFilter.mode) {
+    case "TOP":
+      response.timeSeries.sort(function(a, b) {
+        return b.filterValue - a.filterValue;
+      });
+      response.timeSeries = response.timeSeries.slice(0, param);
+      return response;
+    case "BOTTOM":
+      response.timeSeries.sort(function(a, b) {
+        return a.filterValue - b.filterValue;
+      });
+      response.timeSeries = response.timeSeries.slice(0, param);
+      return response;
+    case "BELOW":
+      response.timeSeries = response.timeSeries.filter(function(elem) {
+        return elem.filterValue < param;
+      });
+      return response;
+    case "ABOVE":
+      response.timeSeries = response.timeSeries.filter(function(elem) {
+        return elem.filterValue > param;
+      });
+      return response;
+    }
+  }
+
+  getSeriesFilterValue(target, series) {
+    let valueKey = series.valueType.toLowerCase() + 'Value';
+    switch(target.seriesFilter.type) {
+    case "MAX":
+      return series.points.reduce(function(acc, elem) {
+        return Math.max(acc, elem.value[valueKey]);
+      }, Number.MIN_VALUE);
+    case "MIN":
+      return series.points.reduce(function(acc, elem) {
+        return Math.min(acc, elem.value[valueKey]);
+      }, Number.MAX_VALUE);
+    case "AVERAGE":
+      if (series.points.length == 0) return 0;
+      return series.points.reduce(function(acc, elem) {
+        return acc + elem.value[valueKey];
+        }, 0) / series.points.length;
+    case "CURRENT":
+      if (series.points.length == 0) return 0;
+      return series.points[0].value[valueKey];
+    }
   }
 
   getMetricLabel(aliasPattern, series) {
