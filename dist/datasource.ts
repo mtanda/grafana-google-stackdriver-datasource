@@ -414,6 +414,7 @@ export default class GoogleStackdriverDatasource {
           return matchedValue.replace(labelRegex, g3);
         }
       } catch (e) {
+        // if regexp compilation fails, we'll return original string below
       }
       return `sub(${g1}, "${g2}", "${g3}")`;
     });
