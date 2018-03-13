@@ -63,8 +63,7 @@ export default class GoogleStackdriverCompleter {
         }
 
         this.getFilterKeyAndValueForMetric(metricType).then(result => {
-          // to filter query, need to use 'label'
-          let valuePicker = _.property(filterKey.replace(/label/g, 'labels'));
+          let valuePicker = _.property(filterKey);
           var filterValues = this.transformToCompletions(
             _.uniq(result.map(r => {
               return valuePicker(r);
@@ -145,9 +144,6 @@ export default class GoogleStackdriverCompleter {
 
   getFilterKeys(obj, prefix, keys) {
     _.forOwn(obj, (val, key) => {
-      if (key === 'labels') {
-        key = 'label';
-      }
       if (_.isObject(val)) {
         this.getFilterKeys(val, prefix + key + '.', keys);
       } else if (_.isArray(val)) {
