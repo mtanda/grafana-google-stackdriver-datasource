@@ -392,20 +392,32 @@ export default class GoogleStackdriverDatasource {
     }
   }
 
-  getMetricLabel(aliasPattern, series) {
-    let aliasRegex = /\{\{(.+?)\}\}/g;
+  getMetricLabel(alias, series) {
     let aliasData = {
       metric: series.metric,
       resource: series.resource
     };
-    let label = aliasPattern.replace(aliasRegex, (match, g1) => {
+    let aliasRegex = /\{\{(.+?)\}\}/g;
+    alias = alias.replace(aliasRegex, (match, g1) => {
       let matchedValue = _.property(g1)(aliasData);
       if (matchedValue) {
         return matchedValue;
       }
       return g1;
     });
-    return label;
+    let aliasSubRegex = /sub\(([^,]+), "([^"]+)", "([^"]+)"\)/g;
+    alias = alias.replace(aliasSubRegex, (match, g1, g2, g3) => {
+      try {
+        let matchedValue = _.property(g1)(aliasData);
+        let labelRegex = new RegExp(g2);
+        if (matchedValue) {
+          return matchedValue.replace(labelRegex, g3);
+        }
+      } catch (e) {
+      }
+      return `sub(${g1}, "${g2}", "${g3}")`;
+    });
+    return alias;
   }
 
   convertTime(date, roundUp) {

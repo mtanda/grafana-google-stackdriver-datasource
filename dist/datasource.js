@@ -388,20 +388,33 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath'], function(expor
                             return series.points[0].value[valueKey];
                     }
                 };
-                GoogleStackdriverDatasource.prototype.getMetricLabel = function (aliasPattern, series) {
-                    var aliasRegex = /\{\{(.+?)\}\}/g;
+                GoogleStackdriverDatasource.prototype.getMetricLabel = function (alias, series) {
                     var aliasData = {
                         metric: series.metric,
                         resource: series.resource
                     };
-                    var label = aliasPattern.replace(aliasRegex, function (match, g1) {
+                    var aliasRegex = /\{\{(.+?)\}\}/g;
+                    alias = alias.replace(aliasRegex, function (match, g1) {
                         var matchedValue = lodash_1.default.property(g1)(aliasData);
                         if (matchedValue) {
                             return matchedValue;
                         }
                         return g1;
                     });
-                    return label;
+                    var aliasSubRegex = /sub\(([^,]+), "([^"]+)", "([^"]+)"\)/g;
+                    alias = alias.replace(aliasSubRegex, function (match, g1, g2, g3) {
+                        try {
+                            var matchedValue = lodash_1.default.property(g1)(aliasData);
+                            var labelRegex = new RegExp(g2);
+                            if (matchedValue) {
+                                return matchedValue.replace(labelRegex, g3);
+                            }
+                        }
+                        catch (e) {
+                        }
+                        return "sub(" + g1 + ", \"" + g2 + "\", \"" + g3 + "\")";
+                    });
+                    return alias;
                 };
                 GoogleStackdriverDatasource.prototype.convertTime = function (date, roundUp) {
                     if (lodash_1.default.isString(date)) {

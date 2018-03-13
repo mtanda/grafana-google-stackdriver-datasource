@@ -67,10 +67,16 @@
 				<li>{{metric.key1.key2}}</li>
 				<li>{{resource.key1.key2}}</li>
 			</ul>
+			Alias substitute function:
+			<ul ng-non-bindable>
+				<li>sub(metric.key1.key2, "regex", "newval")</li>
+				<li>sub(resource.key1, "(reg)(ex)", "$1$2")</li>
+			</ul>
 			Examples:
 			<ul ng-non-bindable>
 				<li>Server {{metric.labels.instance_name}}</li>
 				<li>{{resource.type}} - {{metric.type}}</li>
+				<li>sub(metric.type, ".*cpu/(.*)", "$1")</li>
 			</ul>
 		</info-popover>
 	</div>
