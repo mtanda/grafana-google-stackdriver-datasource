@@ -141,9 +141,9 @@ System.register(['angular', 'lodash', './completer'], function(exports_1) {
                     return paths;
                 }
                 $scope.getGroupByFieldsSegments = function () {
-                    var filter = 'metric.type = "' + $scope.target.metricType + '"';
+                    var filter = "metric.type = \"" + $scope.target.metricType + "\"";
                     if ($scope.target.filter) {
-                        filter += ' AND ' + $scope.target.filter;
+                        filter += " AND " + $scope.target.filter;
                     }
                     var params = {
                         projectId: $scope.target.projectId || $scope.datasource.defaultProjectId,
