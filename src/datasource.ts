@@ -73,6 +73,7 @@ export default class GoogleStackdriverDatasource {
             for (let point of series.points) {
               datapoints.push([point.value[valueKey], Date.parse(point.interval.endTime).valueOf()]);
             }
+            // Stackdriver API returns series in reverse chronological order.
             datapoints.reverse();
             return { target: metricLabel, datapoints: datapoints };
           })
