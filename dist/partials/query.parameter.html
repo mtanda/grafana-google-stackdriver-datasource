@@ -11,6 +11,25 @@
 		<code-editor content="target.filter" datasource="datasource" on-change="onChange()"
 			get-completer="getCompleter()" data-mode="stackdriver" code-editor-focus="isLastQuery">
 		</code-editor>
+		<info-popover mode="right-absolute">
+			Filter operators:
+			<ul ng-non-bindable>
+				<li> ":" substring match (case-sensitive)</li>
+				<li> "=" equality (case-sensitive)</li>
+			</ul>
+			Filter string functions:
+			<ul ng-non-bindable>
+				<li>starts_with()</li>
+				<li>ends_with()</li>
+				<li>has_substring()</li>
+				<li>one_of()</li>
+			</ul>
+			Examples:
+			<ul ng-non-bindable>
+				<li>metric.type : "compute"</li>
+				<li>metric.type = ends_with("name")</li>
+			</ul>
+		</info-popover>
 	</div>
 </div>
 
@@ -53,6 +72,11 @@
 			<ul ng-non-bindable>
 				<li>{{metric.key1.key2}}</li>
 				<li>{{resource.key1.key2}}</li>
+			</ul>
+			Examples:
+			<ul ng-non-bindable>
+				<li>Server {{metric.labels.instance_name}}</li>
+				<li>{{resource.type}} - {{metric.type}}</li>
 			</ul>
 		</info-popover>
 	</div>

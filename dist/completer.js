@@ -57,8 +57,7 @@ System.register(['lodash'], function(exports_1) {
                                 return;
                             }
                             this.getFilterKeyAndValueForMetric(metricType).then(function (result) {
-                                // to filter query, need to use 'label'
-                                var valuePicker = lodash_1.default.property(filterKey.replace(/label/g, 'labels'));
+                                var valuePicker = lodash_1.default.property(filterKey);
                                 var filterValues = _this.transformToCompletions(lodash_1.default.uniq(result.map(function (r) {
                                     return valuePicker(r);
                                 })), 'filter value');
@@ -131,9 +130,6 @@ System.register(['lodash'], function(exports_1) {
                 GoogleStackdriverCompleter.prototype.getFilterKeys = function (obj, prefix, keys) {
                     var _this = this;
                     lodash_1.default.forOwn(obj, function (val, key) {
-                        if (key === 'labels') {
-                            key = 'label';
-                        }
                         if (lodash_1.default.isObject(val)) {
                             _this.getFilterKeys(val, prefix + key + '.', keys);
                         }
