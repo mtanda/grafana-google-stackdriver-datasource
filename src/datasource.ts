@@ -345,50 +345,63 @@ export default class GoogleStackdriverDatasource {
     });
 
     switch(target.seriesFilter.mode) {
-    case "TOP":
+    case 'TOP':
       response.timeSeries.sort(function(a, b) {
         return b.filterValue - a.filterValue;
       });
       response.timeSeries = response.timeSeries.slice(0, param);
       return response;
-    case "BOTTOM":
+    case 'BOTTOM':
       response.timeSeries.sort(function(a, b) {
         return a.filterValue - b.filterValue;
       });
       response.timeSeries = response.timeSeries.slice(0, param);
       return response;
-    case "BELOW":
+    case 'BELOW':
       response.timeSeries = response.timeSeries.filter(function(elem) {
         return elem.filterValue < param;
       });
       return response;
-    case "ABOVE":
+    case 'ABOVE':
       response.timeSeries = response.timeSeries.filter(function(elem) {
         return elem.filterValue > param;
       });
+      return response;
+    default:
+      console.log(`Unknown series filter mode: ${target.seriesFilter.mode}`);
       return response;
     }
   }
 
   getSeriesFilterValue(target, series) {
+    // For empty timeseries return filter value that will push them out first.
+    if (series.points.length == 0) {
+      if (target.seriesFilter.mode === 'BOTTOM' ||
+          target.seriesFilter.mode === 'BELOW') {
+        return Number.MAX_VALUE;
+      } else {
+        return Number.MIN_VALUE;
+      }
+    }
     let valueKey = series.valueType.toLowerCase() + 'Value';
     switch(target.seriesFilter.type) {
-    case "MAX":
+    case 'MAX':
       return series.points.reduce(function(acc, elem) {
         return Math.max(acc, elem.value[valueKey]);
       }, Number.MIN_VALUE);
-    case "MIN":
+    case 'MIN':
       return series.points.reduce(function(acc, elem) {
         return Math.min(acc, elem.value[valueKey]);
       }, Number.MAX_VALUE);
-    case "AVERAGE":
-      if (series.points.length == 0) return 0;
+    case 'AVERAGE':
       return series.points.reduce(function(acc, elem) {
         return acc + elem.value[valueKey];
         }, 0) / series.points.length;
-    case "CURRENT":
-      if (series.points.length == 0) return 0;
+    case 'CURRENT':
       return series.points[0].value[valueKey];
+    default:
+      console.log(`Unknown series filter type: ${target.seriesFilter.type}`);
+      return 0;
     }
   }
 
