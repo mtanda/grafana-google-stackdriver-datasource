@@ -52,7 +52,7 @@ export default class GoogleStackdriverDatasource {
           response.timeSeries.forEach(series => {
             series.target = target;
           });
-          return response;
+          return this.filterSeries(target, response);
         });
       })).then((responses: any) => {
         let timeSeries = _.flatten(responses.filter(response => {
@@ -329,20 +329,109 @@ export default class GoogleStackdriverDatasource {
     });
   }
 
-  getMetricLabel(aliasPattern, series) {
-    let aliasRegex = /\{\{(.+?)\}\}/g;
+  filterSeries(target, response) {
+    if (!_.has(target, 'seriesFilter') ||
+        target.seriesFilter.mode === 'NONE' ||
+        target.seriesFilter.type === 'NONE' ||
+        target.seriesFilter.param === '') {
+      return response;
+    }
+
+    let param = _.toNumber(target.seriesFilter.param);
+    if (_.isNaN(param)) return response;
+
+    response.timeSeries.forEach(series => {
+      series['filterValue'] = this.getSeriesFilterValue(target, series);
+    });
+
+    switch(target.seriesFilter.mode) {
+    case 'TOP':
+      response.timeSeries.sort(function(a, b) {
+        return b.filterValue - a.filterValue;
+      });
+      response.timeSeries = response.timeSeries.slice(0, param);
+      return response;
+    case 'BOTTOM':
+      response.timeSeries.sort(function(a, b) {
+        return a.filterValue - b.filterValue;
+      });
+      response.timeSeries = response.timeSeries.slice(0, param);
+      return response;
+    case 'BELOW':
+      response.timeSeries = response.timeSeries.filter(function(elem) {
+        return elem.filterValue < param;
+      });
+      return response;
+    case 'ABOVE':
+      response.timeSeries = response.timeSeries.filter(function(elem) {
+        return elem.filterValue > param;
+      });
+      return response;
+    default:
+      console.log(`Unknown series filter mode: ${target.seriesFilter.mode}`);
+      return response;
+    }
+  }
+
+  getSeriesFilterValue(target, series) {
+    // For empty timeseries return filter value that will push them out first.
+    if (series.points.length == 0) {
+      if (target.seriesFilter.mode === 'BOTTOM' ||
+          target.seriesFilter.mode === 'BELOW') {
+        return Number.MAX_VALUE;
+      } else {
+        return Number.MIN_VALUE;
+      }
+    }
+    let valueKey = series.valueType.toLowerCase() + 'Value';
+    switch(target.seriesFilter.type) {
+    case 'MAX':
+      return series.points.reduce(function(acc, elem) {
+        return Math.max(acc, elem.value[valueKey]);
+      }, Number.MIN_VALUE);
+    case 'MIN':
+      return series.points.reduce(function(acc, elem) {
+        return Math.min(acc, elem.value[valueKey]);
+      }, Number.MAX_VALUE);
+    case 'AVERAGE':
+      return series.points.reduce(function(acc, elem) {
+        return acc + elem.value[valueKey];
+        }, 0) / series.points.length;
+    case 'CURRENT':
+      return series.points[0].value[valueKey];
+    default:
+      console.log(`Unknown series filter type: ${target.seriesFilter.type}`);
+      return 0;
+    }
+  }
+
+  getMetricLabel(alias, series) {
     let aliasData = {
       metric: series.metric,
       resource: series.resource
     };
-    let label = aliasPattern.replace(aliasRegex, (match, g1) => {
+    let aliasRegex = /\{\{(.+?)\}\}/g;
+    alias = alias.replace(aliasRegex, (match, g1) => {
       let matchedValue = _.property(g1)(aliasData);
       if (matchedValue) {
         return matchedValue;
       }
       return g1;
     });
-    return label;
+    let aliasSubRegex = /sub\(([^,]+), "([^"]+)", "([^"]+)"\)/g;
+    alias = alias.replace(aliasSubRegex, (match, g1, g2, g3) => {
+      try {
+        let matchedValue = _.property(g1)(aliasData);
+        let labelRegex = new RegExp(g2);
+        if (matchedValue) {
+          return matchedValue.replace(labelRegex, g3);
+        }
+      } catch (e) {
+        // if regexp compilation fails, we'll return original string below
+      }
+      return `sub(${g1}, "${g2}", "${g3}")`;
+    });
+    return alias;
   }
 
   convertTime(date, roundUp) {

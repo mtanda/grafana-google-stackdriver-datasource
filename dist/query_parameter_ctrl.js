@@ -40,6 +40,11 @@ System.register(['angular', 'lodash', './completer'], function(exports_1) {
                         groupByFields: []
                     };
                     target.alias = target.alias || '';
+                    target.seriesFilter = target.seriesFilter || {
+                        mode: 'NONE',
+                        type: 'NONE',
+                        param: ''
+                    };
                     $scope.perSeriesAlignerSegment = uiSegmentSrv.getSegmentForValue($scope.target.aggregation.perSeriesAligner, 'aligner');
                     $scope.crossSeriesReducerSegment = uiSegmentSrv.getSegmentForValue($scope.target.aggregation.crossSeriesReducer, 'reducer');
                     $scope.groupByFieldsSegments = lodash_1.default.map($scope.target.aggregation.groupByFields, function (field) {
@@ -47,6 +52,8 @@ System.register(['angular', 'lodash', './completer'], function(exports_1) {
                     });
                     $scope.ensurePlusButton($scope.groupByFieldsSegments);
                     $scope.removeGroupByFieldsSegment = uiSegmentSrv.newSegment({ fake: true, value: '-- remove field --' });
+                    $scope.seriesFilterModeSegment = uiSegmentSrv.getSegmentForValue($scope.target.seriesFilter.mode, 'seriesFilterMode');
+                    $scope.seriesFilterTypeSegment = uiSegmentSrv.getSegmentForValue($scope.target.seriesFilter.type, 'seriesFilterType');
                     if (!$scope.onChange) {
                         $scope.onChange = function () { };
                     }
@@ -121,6 +128,36 @@ System.register(['angular', 'lodash', './completer'], function(exports_1) {
                 };
                 $scope.reducerChanged = function () {
                     $scope.target.aggregation.crossSeriesReducer = $scope.crossSeriesReducerSegment.value;
+                    $scope.onChange();
+                };
+                $scope.getSeriesFilterModes = function () {
+                    return $q.when([
+                        'NONE',
+                        'TOP',
+                        'BOTTOM',
+                        'ABOVE',
+                        'BELOW',
+                    ].map(function (v) {
+                        return uiSegmentSrv.newSegment({ value: v, expandable: false });
+                    }));
+                };
+                $scope.getSeriesFilterTypes = function () {
+                    return $q.when([
+                        'NONE',
+                        'AVERAGE',
+                        'MAX',
+                        'MIN',
+                        'CURRENT',
+                    ].map(function (v) {
+                        return uiSegmentSrv.newSegment({ value: v, expandable: false });
+                    }));
+                };
+                $scope.seriesFilterModeChanged = function () {
+                    $scope.target.seriesFilter.mode = $scope.seriesFilterModeSegment.value;
+                    $scope.onChange();
+                };
+                $scope.seriesFilterTypeChanged = function () {
+                    $scope.target.seriesFilter.type = $scope.seriesFilterTypeSegment.value;
                     $scope.onChange();
                 };
                 function getAllFieldPaths(timeSeries) {

@@ -22,6 +22,8 @@ export default class GoogleStackdriverDatasource {
     performMetricDescriptorsQuery(target: any, options: any): any;
     performGroupsQuery(target: any, options: any): any;
     performGroupsMembersQuery(target: any, options: any): any;
-    getMetricLabel(aliasPattern: any, series: any): any;
+    filterSeries(target: any, response: any): any;
+    getSeriesFilterValue(target: any, series: any): any;
+    getMetricLabel(alias: any, series: any): any;
     convertTime(date: any, roundUp: any): any;
 }

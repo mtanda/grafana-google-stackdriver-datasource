@@ -58,13 +58,7 @@
 </div>
 
 <div class="gf-form-inline">
-	<div class="gf-form">
-		<label class="gf-form-label query-keyword width-7">
-			Project ID
-		</label>
-		<input type="text" class="gf-form-input input-small width-10" ng-model="target.projectId" spellcheck='false' ng-model-onblur ng-change="onChange()" />
-	</div>
-	<div class="gf-form max-width-30">
+	<div class="gf-form gf-form--grow">
 		<label class="gf-form-label query-keyword width-7">Alias</label>
 		<input type="text" class="gf-form-input" ng-model="target.alias" spellcheck='false' ng-model-onblur ng-change="onChange()">
 		<info-popover mode="right-absolute">
@@ -73,14 +67,52 @@
 				<li>{{metric.key1.key2}}</li>
 				<li>{{resource.key1.key2}}</li>
 			</ul>
+			Alias substitute function:
+			<ul ng-non-bindable>
+				<li>sub(metric.key1.key2, "regex", "newval")</li>
+				<li>sub(resource.key1, "(reg)(ex)", "$1$2")</li>
+			</ul>
 			Examples:
 			<ul ng-non-bindable>
 				<li>Server {{metric.labels.instance_name}}</li>
 				<li>{{resource.type}} - {{metric.type}}</li>
+				<li>sub(metric.type, ".*cpu/(.*)", "$1")</li>
 			</ul>
 		</info-popover>
 	</div>
+</div>
+
+<div class="gf-form-inline">
+	<div class="gf-form">
+		<label class="gf-form-label query-keyword">Limit Timeseries</label>
+	</div>
+
+	<div class="gf-form">
+		<metric-segment segment="seriesFilterTypeSegment" get-options="getSeriesFilterTypes()" on-change="seriesFilterTypeChanged()"></metric-segment>
+	</div>
+	<div class="gf-form">
+		<metric-segment segment="seriesFilterModeSegment" get-options="getSeriesFilterModes()" on-change="seriesFilterModeChanged()"></metric-segment>
+	</div>
+	<input type="text" class="gf-form-input input-small width-10" ng-model="target.seriesFilter.param" spellcheck='false' placeholder="value" ng-model-onblur ng-change="onChange()" />
+
 	<div class="gf-form gf-form--grow">
 		<div class="gf-form-label gf-form-label--grow"></div>
+		<info-popover mode="right-absolute">
+			Show only subset of timeseries matching the query.<br/><br/>
+			Examples:
+			<ul ng-non-bindable>
+				<li>AVERAGE TOP 10 - limit to top 10 series ordered by average series value</li>
+				<li>MIN ABOVE 2300 - show only series with min datapoint above 2300</li>
+			</ul>
+		</info-popover>
+	</div>
+</div>
+
+<div class="gf-form-inline">
+	<div class="gf-form">
+		<label class="gf-form-label query-keyword width-7">
+			Project ID
+		</label>
+		<input type="text" class="gf-form-input input-small width-10" ng-model="target.projectId" spellcheck='false' placeholder="default" ng-model-onblur ng-change="onChange()" />
 	</div>
 </div>
