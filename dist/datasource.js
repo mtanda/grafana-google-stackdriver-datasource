@@ -78,8 +78,8 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath'], function(expor
                                 })
                             };
                         }, function (err) {
-                            err = JSON.parse(err.body);
                             console.log(err);
+                            err = JSON.parse(err.body);
                             throw err.error;
                         });
                     });
@@ -242,7 +242,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath'], function(expor
                         }
                         target.pageToken = response.nextPageToken;
                         return _this.performTimeSeriesQuery(target, options).then(function (nextResponse) {
-                            response = response.timeSeries.concat(nextResponse.timeSeries);
+                            response.timeSeries = response.timeSeries.concat(nextResponse.timeSeries);
                             return response;
                         });
                     });
