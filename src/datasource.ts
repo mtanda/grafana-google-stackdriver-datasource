@@ -62,10 +62,7 @@ export default class GoogleStackdriverDatasource {
         }));
         return {
           data: timeSeries.map(series => {
-            let aliasPattern = '{{resource.type}} - {{metric.type}}';
-            if (series.target.alias) {
-              aliasPattern = series.target.alias;
-            }
+            let aliasPattern = series.target.alias;
             let metricLabel = this.getMetricLabel(aliasPattern, series);
 
             let datapoints = [];
@@ -410,6 +407,9 @@ export default class GoogleStackdriverDatasource {
       metric: series.metric,
       resource: series.resource
     };
+    if (alias === '') {
+      return JSON.stringify(aliasData);
+    }
     let aliasRegex = /\{\{(.+?)\}\}/g;
     alias = alias.replace(aliasRegex, (match, g1) => {
       let matchedValue = _.property(g1)(aliasData);
