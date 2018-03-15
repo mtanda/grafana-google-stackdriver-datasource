@@ -64,10 +64,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath'], function(expor
                             }));
                             return {
                                 data: timeSeries.map(function (series) {
-                                    var aliasPattern = '{{resource.type}} - {{metric.type}}';
-                                    if (series.target.alias) {
-                                        aliasPattern = series.target.alias;
-                                    }
+                                    var aliasPattern = series.target.alias;
                                     var metricLabel = _this.getMetricLabel(aliasPattern, series);
                                     var datapoints = [];
                                     var valueKey = series.valueType.toLowerCase() + 'Value';
@@ -405,6 +402,9 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath'], function(expor
                         metric: series.metric,
                         resource: series.resource
                     };
+                    if (alias === '') {
+                        return JSON.stringify(aliasData);
+                    }
                     var aliasRegex = /\{\{(.+?)\}\}/g;
                     alias = alias.replace(aliasRegex, function (match, g1) {
                         var matchedValue = lodash_1.default.property(g1)(aliasData);
