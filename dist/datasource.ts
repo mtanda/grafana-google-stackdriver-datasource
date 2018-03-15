@@ -79,8 +79,8 @@ export default class GoogleStackdriverDatasource {
           })
         };
       }, err => {
-        err = JSON.parse(err.body);
         console.log(err);
+        err = JSON.parse(err.body);
         throw err.error;
       });
     });
@@ -247,7 +247,7 @@ export default class GoogleStackdriverDatasource {
       }
       target.pageToken = response.nextPageToken;
       return this.performTimeSeriesQuery(target, options).then(nextResponse => {
-        response = response.timeSeries.concat(nextResponse.timeSeries);
+        response.timeSeries = response.timeSeries.concat(nextResponse.timeSeries);
         return response;
       });
     });
