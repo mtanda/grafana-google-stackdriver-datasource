@@ -162,7 +162,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath'], function(expor
                             throw err.error;
                         });
                     }
-                    return this.$q.when([]);
+                    return Promise.reject(new Error('Invalid query, use one of: metrics(), label_values(), groups(), group_members()'));
                 };
                 GoogleStackdriverDatasource.prototype.testDatasource = function () {
                     return this.initialize().then(function () {

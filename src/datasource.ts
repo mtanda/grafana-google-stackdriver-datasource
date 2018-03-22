@@ -164,7 +164,7 @@ export default class GoogleStackdriverDatasource {
       });
     }
 
-    return this.$q.when([]);
+    return Promise.reject(new Error('Invalid query, use one of: metrics(), label_values(), groups(), group_members()'));
   }
 
   testDatasource() {
