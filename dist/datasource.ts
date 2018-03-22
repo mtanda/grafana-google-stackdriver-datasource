@@ -114,6 +114,10 @@ export default class GoogleStackdriverDatasource {
         return this.$q.when(response.timeSeries.map(d => {
           return { text: valuePicker(d) };
         }));
+      }, err => {
+        console.log(err);
+        err = JSON.parse(err.body);
+        throw err.error;
       });
     }
 
@@ -130,6 +134,10 @@ export default class GoogleStackdriverDatasource {
             text: d.name.split('/')[3]
           };
         }));
+      }, err => {
+        console.log(err);
+        err = JSON.parse(err.body);
+        throw err.error;
       });
     }
 
@@ -149,6 +157,10 @@ export default class GoogleStackdriverDatasource {
         return this.$q.when(response.members.map(d => {
           return { text: valuePicker(d) };
         }));
+      }, err => {
+        console.log(err);
+        err = JSON.parse(err.body);
+        throw err.error;
       });
     }
 
