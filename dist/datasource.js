@@ -115,6 +115,10 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath'], function(expor
                             return _this.$q.when(response.timeSeries.map(function (d) {
                                 return { text: valuePicker(d) };
                             }));
+                        }, function (err) {
+                            console.log(err);
+                            err = JSON.parse(err.body);
+                            throw err.error;
                         });
                     }
                     var groupsQuery = query.match(/^groups\(([^,]+)?\)/);
@@ -130,6 +134,10 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath'], function(expor
                                     text: d.name.split('/')[3]
                                 };
                             }));
+                        }, function (err) {
+                            console.log(err);
+                            err = JSON.parse(err.body);
+                            throw err.error;
                         });
                     }
                     var groupMembersQuery = query.match(/^group_members\((([^,]+), *)?([^,]+), *([^,]+), *(.*)\)/);
@@ -148,9 +156,13 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath'], function(expor
                             return _this.$q.when(response.members.map(function (d) {
                                 return { text: valuePicker(d) };
                             }));
+                        }, function (err) {
+                            console.log(err);
+                            err = JSON.parse(err.body);
+                            throw err.error;
                         });
                     }
-                    return this.$q.when([]);
+                    return Promise.reject(new Error('Invalid query, use one of: metrics(), label_values(), groups(), group_members()'));
                 };
                 GoogleStackdriverDatasource.prototype.testDatasource = function () {
                     return this.initialize().then(function () {

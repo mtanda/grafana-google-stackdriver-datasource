@@ -114,6 +114,10 @@ export default class GoogleStackdriverDatasource {
         return this.$q.when(response.timeSeries.map(d => {
           return { text: valuePicker(d) };
         }));
+      }, err => {
+        console.log(err);
+        err = JSON.parse(err.body);
+        throw err.error;
       });
     }
 
@@ -130,6 +134,10 @@ export default class GoogleStackdriverDatasource {
             text: d.name.split('/')[3]
           };
         }));
+      }, err => {
+        console.log(err);
+        err = JSON.parse(err.body);
+        throw err.error;
       });
     }
 
@@ -149,10 +157,14 @@ export default class GoogleStackdriverDatasource {
         return this.$q.when(response.members.map(d => {
           return { text: valuePicker(d) };
         }));
+      }, err => {
+        console.log(err);
+        err = JSON.parse(err.body);
+        throw err.error;
       });
     }
 
-    return this.$q.when([]);
+    return Promise.reject(new Error('Invalid query, use one of: metrics(), label_values(), groups(), group_members()'));
   }
 
   testDatasource() {
