@@ -4,6 +4,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import angular from 'angular';
 import * as dateMath from 'app/core/utils/datemath';
+import appEvents from 'app/core/app_events';
 
 System.config({
   meta: {
@@ -49,6 +50,7 @@ export default class GoogleStackdriverDatasource {
         }
         target.filter = filter;
         return this.performTimeSeriesQuery(target, options).then(response => {
+          appEvents.emit('ds-request-response', response);
           response.timeSeries.forEach(series => {
             series.target = target;
           });
@@ -78,6 +80,7 @@ export default class GoogleStackdriverDatasource {
       }, err => {
         console.log(err);
         err = JSON.parse(err.body);
+        appEvents.emit('ds-request-error', err);
         throw err.error;
       });
     });
