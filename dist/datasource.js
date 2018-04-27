@@ -1,6 +1,6 @@
 ///<reference path="../node_modules/grafana-sdk-mocks/app/headers/common.d.ts" />
-System.register(['lodash', 'angular', 'app/core/utils/datemath'], function(exports_1) {
-    var lodash_1, angular_1, dateMath;
+System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_events'], function(exports_1) {
+    var lodash_1, angular_1, dateMath, app_events_1;
     var GoogleStackdriverDatasource;
     return {
         setters:[
@@ -12,6 +12,9 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath'], function(expor
             },
             function (dateMath_1) {
                 dateMath = dateMath_1;
+            },
+            function (app_events_1_1) {
+                app_events_1 = app_events_1_1;
             }],
         execute: function() {
             System.config({
@@ -51,6 +54,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath'], function(expor
                             }
                             target.filter = filter;
                             return _this.performTimeSeriesQuery(target, options).then(function (response) {
+                                app_events_1.default.emit('ds-request-response', response);
                                 response.timeSeries.forEach(function (series) {
                                     series.target = target;
                                 });
@@ -80,6 +84,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath'], function(expor
                         }, function (err) {
                             console.log(err);
                             err = JSON.parse(err.body);
+                            app_events_1.default.emit('ds-request-error', err);
                             throw err.error;
                         });
                     });
