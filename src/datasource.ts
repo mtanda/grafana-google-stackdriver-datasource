@@ -65,28 +65,27 @@ export default class GoogleStackdriverDatasource {
         return {
           data: timeSeries.map(series => {
             let aliasPattern = series.target.alias;
-            let metricLabel = this.getMetricLabel(aliasPattern, series);
-
             let datapoints = [];
             let valueKey = series.valueType.toLowerCase() + 'Value';
-            for (let point of series.points) {
-              let value = point.value[valueKey];
-              if (!value) {
-                continue;
+
+            if (valueKey != 'distributionValue') {
+              let metricLabel = this.getMetricLabel(aliasPattern, series);
+              for (let point of series.points) {
+                let value = point.value[valueKey];
+                if (!value) {
+                  continue;
+                }
+                switch (valueKey) {
+                  case 'boolValue':
+                    value = value ? 1 : 0; // convert bool value to int
+                    break;
+                }
+                datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
               }
-              switch (valueKey) {
-                case 'boolValue':
-                  value = value ? 1 : 0; // convert bool value to int
-                  break;
-                case 'distributionValue':
-                  // not supported yet
-                  break;
-              }
-              datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
+              // Stackdriver API returns series in reverse chronological order.
+              datapoints.reverse();
+              return { target: metricLabel, datapoints: datapoints };
             }
-            // Stackdriver API returns series in reverse chronological order.
-            datapoints.reverse();
-            return { target: metricLabel, datapoints: datapoints };
           })
         };
       }, err => {
