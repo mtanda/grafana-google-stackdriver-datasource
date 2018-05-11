@@ -74,7 +74,19 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                                     var valueKey = series.valueType.toLowerCase() + 'Value';
                                     for (var _i = 0, _a = series.points; _i < _a.length; _i++) {
                                         var point = _a[_i];
-                                        datapoints.push([point.value[valueKey], Date.parse(point.interval.endTime).valueOf()]);
+                                        var value = point.value[valueKey];
+                                        if (!value) {
+                                            continue;
+                                        }
+                                        switch (valueKey) {
+                                            case 'boolValue':
+                                                value = value ? 1 : 0; // convert bool value to int
+                                                break;
+                                            case 'distributionValue':
+                                                // not supported yet
+                                                break;
+                                        }
+                                        datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
                                     }
                                     // Stackdriver API returns series in reverse chronological order.
                                     datapoints.reverse();
