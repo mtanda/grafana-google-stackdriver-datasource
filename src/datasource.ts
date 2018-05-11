@@ -70,7 +70,19 @@ export default class GoogleStackdriverDatasource {
             let datapoints = [];
             let valueKey = series.valueType.toLowerCase() + 'Value';
             for (let point of series.points) {
-              datapoints.push([point.value[valueKey], Date.parse(point.interval.endTime).valueOf()]);
+              let value = point.value[valueKey];
+              if (!value) {
+                continue;
+              }
+              switch (valueKey) {
+                case 'boolValue':
+                  value = value ? 1 : 0; // convert bool value to int
+                  break;
+                case 'distributionValue':
+                  // not supported yet
+                  break;
+              }
+              datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
             }
             // Stackdriver API returns series in reverse chronological order.
             datapoints.reverse();
