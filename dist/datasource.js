@@ -69,28 +69,68 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             return {
                                 data: timeSeries.map(function (series) {
                                     var aliasPattern = series.target.alias;
-                                    var metricLabel = _this.getMetricLabel(aliasPattern, series);
-                                    var datapoints = [];
                                     var valueKey = series.valueType.toLowerCase() + 'Value';
-                                    for (var _i = 0, _a = series.points; _i < _a.length; _i++) {
-                                        var point = _a[_i];
-                                        var value = point.value[valueKey];
-                                        if (!value) {
-                                            continue;
+                                    if (valueKey != 'distributionValue') {
+                                        var datapoints = [];
+                                        var metricLabel = _this.getMetricLabel(aliasPattern, series);
+                                        for (var _i = 0, _a = series.points; _i < _a.length; _i++) {
+                                            var point = _a[_i];
+                                            var value = point.value[valueKey];
+                                            if (!value) {
+                                                continue;
+                                            }
+                                            switch (valueKey) {
+                                                case 'boolValue':
+                                                    value = value ? 1 : 0; // convert bool value to int
+                                                    break;
+                                            }
+                                            datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
                                         }
-                                        switch (valueKey) {
-                                            case 'boolValue':
-                                                value = value ? 1 : 0; // convert bool value to int
-                                                break;
-                                            case 'distributionValue':
-                                                // not supported yet
-                                                break;
-                                        }
-                                        datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
+                                        // Stackdriver API returns series in reverse chronological order.
+                                        datapoints.reverse();
+                                        return [{ target: metricLabel, datapoints: datapoints }];
                                     }
-                                    // Stackdriver API returns series in reverse chronological order.
-                                    datapoints.reverse();
-                                    return { target: metricLabel, datapoints: datapoints };
+                                    else {
+                                        var buckets = [];
+                                        var bucketBounds = [];
+                                        var bucketOptions = series.points[0].value.distributionValue.bucketOptions;
+                                        // set lower bounds
+                                        // https://cloud.google.com/monitoring/api/ref_v3/rest/v3/TimeSeries#Distribution
+                                        bucketBounds[0] = 0;
+                                        if (bucketOptions.linearBuckets) {
+                                            for (var i = 1; i < bucketOptions.linearBuckets.numFiniteBuckets + 2; i++) {
+                                                bucketBounds[i] = bucketOptions.linearBuckets.offset + (bucketOptions.linearBuckets.width * (i - 1));
+                                            }
+                                        }
+                                        else if (bucketOptions.exponentialBuckets) {
+                                            for (var i = 1; i < bucketOptions.exponentialBuckets.numFiniteBuckets + 2; i++) {
+                                                bucketBounds[i] = bucketOptions.exponentialBuckets.scale * (Math.pow(bucketOptions.exponentialBuckets.growthFactor, (i - 1)));
+                                            }
+                                        }
+                                        else if (bucketOptions.explicitBuckets) {
+                                            for (var i = 1; i < bucketOptions.explicitBuckets.bounds.length + 1; i++) {
+                                                bucketBounds[i] = bucketOptions.explicitBuckets.bounds[(i - 1)];
+                                            }
+                                        }
+                                        for (var i = 0; i < bucketBounds.length; i++) {
+                                            buckets[i] = {
+                                                target: _this.getMetricLabel(aliasPattern, lodash_1.default.extend(series, { bucket: bucketBounds[i] })),
+                                                datapoints: []
+                                            };
+                                        }
+                                        for (var _b = 0, _c = series.points; _b < _c.length; _b++) {
+                                            var point = _c[_b];
+                                            for (var i = 0; i < point.value.distributionValue.bucketCounts.length; i++) {
+                                                var value = parseInt(point.value.distributionValue.bucketCounts[i], 10);
+                                                if (value !== 0) {
+                                                    buckets[i].datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
+                                                }
+                                            }
+                                        }
+                                        return buckets;
+                                    }
+                                }).flatten().filter(function (series) {
+                                    return series.datapoints.length > 0;
                                 })
                             };
                         }, function (err) {
@@ -431,6 +471,9 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                         metric: series.metric,
                         resource: series.resource
                     };
+                    if (series.bucket) {
+                        aliasData['bucket'] = series.bucket;
+                    }
                     if (alias === '') {
                         return JSON.stringify(aliasData);
                     }
