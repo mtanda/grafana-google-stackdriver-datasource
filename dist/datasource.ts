@@ -136,87 +136,89 @@ export default class GoogleStackdriverDatasource {
   }
 
   metricFindQuery(query) {
-    let metricsQuery = query.match(/^metrics\((([^,]+), *)?(.*)\)/);
-    if (metricsQuery) {
-      let projectId = metricsQuery[2] || this.defaultProjectId;
-      let filter = metricsQuery[3];
-      let params = {
-        projectId: projectId,
-        filter: filter
-      };
-      return this.performMetricDescriptorsQuery(params, {}).then(response => {
-        return this.$q.when(response.metricDescriptors.map(d => {
-          return { text: d.type };
-        }));
-      });
-    }
+    return this.initialize().then(() => {
+      let metricsQuery = query.match(/^metrics\((([^,]+), *)?(.*)\)/);
+      if (metricsQuery) {
+        let projectId = metricsQuery[2] || this.defaultProjectId;
+        let filter = metricsQuery[3];
+        let params = {
+          projectId: projectId,
+          filter: filter
+        };
+        return this.performMetricDescriptorsQuery(params, {}).then(response => {
+          return this.$q.when(response.metricDescriptors.map(d => {
+            return { text: d.type };
+          }));
+        });
+      }
 
-    let labelQuery = query.match(/^label_values\((([^,]+), *)?([^,]+), *(.*)\)/);
-    if (labelQuery) {
-      let projectId = labelQuery[2] || this.defaultProjectId;
-      let targetProperty = labelQuery[3];
-      let filter = labelQuery[4];
-      let params = {
-        projectId: projectId,
-        filter: filter,
-        view: 'HEADERS'
-      };
-      return this.performTimeSeriesQuery(params, { range: this.timeSrv.timeRange() }).then(response => {
-        let valuePicker = _.property(targetProperty);
-        return this.$q.when(response.timeSeries.map(d => {
-          return { text: valuePicker(d) };
-        }));
-      }, err => {
-        console.log(err);
-        err = JSON.parse(err.body);
-        throw err.error;
-      });
-    }
+      let labelQuery = query.match(/^label_values\((([^,]+), *)?([^,]+), *(.*)\)/);
+      if (labelQuery) {
+        let projectId = labelQuery[2] || this.defaultProjectId;
+        let targetProperty = labelQuery[3];
+        let filter = labelQuery[4];
+        let params = {
+          projectId: projectId,
+          filter: filter,
+          view: 'HEADERS'
+        };
+        return this.performTimeSeriesQuery(params, { range: this.timeSrv.timeRange() }).then(response => {
+          let valuePicker = _.property(targetProperty);
+          return this.$q.when(response.timeSeries.map(d => {
+            return { text: valuePicker(d) };
+          }));
+        }, err => {
+          console.log(err);
+          err = JSON.parse(err.body);
+          throw err.error;
+        });
+      }
 
-    let groupsQuery = query.match(/^groups\(([^,]+)?\)/);
-    if (groupsQuery) {
-      let projectId = groupsQuery[1] || this.defaultProjectId;
-      let params = {
-        projectId: projectId
-      };
-      return this.performGroupsQuery(params, {}).then(response => {
-        return this.$q.when(response.group.map(d => {
-          return {
-            //text: d.displayName
-            text: d.name.split('/')[3]
-          };
-        }));
-      }, err => {
-        console.log(err);
-        err = JSON.parse(err.body);
-        throw err.error;
-      });
-    }
+      let groupsQuery = query.match(/^groups\(([^,]+)?\)/);
+      if (groupsQuery) {
+        let projectId = groupsQuery[1] || this.defaultProjectId;
+        let params = {
+          projectId: projectId
+        };
+        return this.performGroupsQuery(params, {}).then(response => {
+          return this.$q.when(response.group.map(d => {
+            return {
+              //text: d.displayName
+              text: d.name.split('/')[3]
+            };
+          }));
+        }, err => {
+          console.log(err);
+          err = JSON.parse(err.body);
+          throw err.error;
+        });
+      }
 
-    let groupMembersQuery = query.match(/^group_members\((([^,]+), *)?([^,]+), *([^,]+), *(.*)\)/);
-    if (groupMembersQuery) {
-      let projectId = groupMembersQuery[2] || this.defaultProjectId;
-      let groupId = groupMembersQuery[3];
-      let targetProperty = groupMembersQuery[4];
-      let filter = groupMembersQuery[5];
-      let params = {
-        projectId: projectId,
-        groupId: groupId,
-        filter: filter
-      };
-      return this.performGroupsMembersQuery(params, { range: this.timeSrv.timeRange() }).then(response => {
-        let valuePicker = _.property(targetProperty);
-        return this.$q.when(response.members.map(d => {
-          return { text: valuePicker(d) };
-        }));
-      }, err => {
-        console.log(err);
-        err = JSON.parse(err.body);
-        throw err.error;
-      });
-    }
+      let groupMembersQuery = query.match(/^group_members\((([^,]+), *)?([^,]+), *([^,]+), *(.*)\)/);
+      if (groupMembersQuery) {
+        let projectId = groupMembersQuery[2] || this.defaultProjectId;
+        let groupId = groupMembersQuery[3];
+        let targetProperty = groupMembersQuery[4];
+        let filter = groupMembersQuery[5];
+        let params = {
+          projectId: projectId,
+          groupId: groupId,
+          filter: filter
+        };
+        return this.performGroupsMembersQuery(params, { range: this.timeSrv.timeRange() }).then(response => {
+          let valuePicker = _.property(targetProperty);
+          return this.$q.when(response.members.map(d => {
+            return { text: valuePicker(d) };
+          }));
+        }, err => {
+          console.log(err);
+          err = JSON.parse(err.body);
+          throw err.error;
+        });
+      }
 
-    return Promise.reject(new Error('Invalid query, use one of: metrics(), label_values(), groups(), group_members()'));
+      return Promise.reject(new Error('Invalid query, use one of: metrics(), label_values(), groups(), group_members()'));
+    });
   }
 
   testDatasource() {

@@ -143,83 +143,85 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                 };
                 GoogleStackdriverDatasource.prototype.metricFindQuery = function (query) {
                     var _this = this;
-                    var metricsQuery = query.match(/^metrics\((([^,]+), *)?(.*)\)/);
-                    if (metricsQuery) {
-                        var projectId = metricsQuery[2] || this.defaultProjectId;
-                        var filter = metricsQuery[3];
-                        var params = {
-                            projectId: projectId,
-                            filter: filter
-                        };
-                        return this.performMetricDescriptorsQuery(params, {}).then(function (response) {
-                            return _this.$q.when(response.metricDescriptors.map(function (d) {
-                                return { text: d.type };
-                            }));
-                        });
-                    }
-                    var labelQuery = query.match(/^label_values\((([^,]+), *)?([^,]+), *(.*)\)/);
-                    if (labelQuery) {
-                        var projectId = labelQuery[2] || this.defaultProjectId;
-                        var targetProperty = labelQuery[3];
-                        var filter = labelQuery[4];
-                        var params = {
-                            projectId: projectId,
-                            filter: filter,
-                            view: 'HEADERS'
-                        };
-                        return this.performTimeSeriesQuery(params, { range: this.timeSrv.timeRange() }).then(function (response) {
-                            var valuePicker = lodash_1.default.property(targetProperty);
-                            return _this.$q.when(response.timeSeries.map(function (d) {
-                                return { text: valuePicker(d) };
-                            }));
-                        }, function (err) {
-                            console.log(err);
-                            err = JSON.parse(err.body);
-                            throw err.error;
-                        });
-                    }
-                    var groupsQuery = query.match(/^groups\(([^,]+)?\)/);
-                    if (groupsQuery) {
-                        var projectId = groupsQuery[1] || this.defaultProjectId;
-                        var params = {
-                            projectId: projectId
-                        };
-                        return this.performGroupsQuery(params, {}).then(function (response) {
-                            return _this.$q.when(response.group.map(function (d) {
-                                return {
-                                    //text: d.displayName
-                                    text: d.name.split('/')[3]
-                                };
-                            }));
-                        }, function (err) {
-                            console.log(err);
-                            err = JSON.parse(err.body);
-                            throw err.error;
-                        });
-                    }
-                    var groupMembersQuery = query.match(/^group_members\((([^,]+), *)?([^,]+), *([^,]+), *(.*)\)/);
-                    if (groupMembersQuery) {
-                        var projectId = groupMembersQuery[2] || this.defaultProjectId;
-                        var groupId = groupMembersQuery[3];
-                        var targetProperty = groupMembersQuery[4];
-                        var filter = groupMembersQuery[5];
-                        var params = {
-                            projectId: projectId,
-                            groupId: groupId,
-                            filter: filter
-                        };
-                        return this.performGroupsMembersQuery(params, { range: this.timeSrv.timeRange() }).then(function (response) {
-                            var valuePicker = lodash_1.default.property(targetProperty);
-                            return _this.$q.when(response.members.map(function (d) {
-                                return { text: valuePicker(d) };
-                            }));
-                        }, function (err) {
-                            console.log(err);
-                            err = JSON.parse(err.body);
-                            throw err.error;
-                        });
-                    }
-                    return Promise.reject(new Error('Invalid query, use one of: metrics(), label_values(), groups(), group_members()'));
+                    return this.initialize().then(function () {
+                        var metricsQuery = query.match(/^metrics\((([^,]+), *)?(.*)\)/);
+                        if (metricsQuery) {
+                            var projectId = metricsQuery[2] || _this.defaultProjectId;
+                            var filter = metricsQuery[3];
+                            var params = {
+                                projectId: projectId,
+                                filter: filter
+                            };
+                            return _this.performMetricDescriptorsQuery(params, {}).then(function (response) {
+                                return _this.$q.when(response.metricDescriptors.map(function (d) {
+                                    return { text: d.type };
+                                }));
+                            });
+                        }
+                        var labelQuery = query.match(/^label_values\((([^,]+), *)?([^,]+), *(.*)\)/);
+                        if (labelQuery) {
+                            var projectId = labelQuery[2] || _this.defaultProjectId;
+                            var targetProperty = labelQuery[3];
+                            var filter = labelQuery[4];
+                            var params = {
+                                projectId: projectId,
+                                filter: filter,
+                                view: 'HEADERS'
+                            };
+                            return _this.performTimeSeriesQuery(params, { range: _this.timeSrv.timeRange() }).then(function (response) {
+                                var valuePicker = lodash_1.default.property(targetProperty);
+                                return _this.$q.when(response.timeSeries.map(function (d) {
+                                    return { text: valuePicker(d) };
+                                }));
+                            }, function (err) {
+                                console.log(err);
+                                err = JSON.parse(err.body);
+                                throw err.error;
+                            });
+                        }
+                        var groupsQuery = query.match(/^groups\(([^,]+)?\)/);
+                        if (groupsQuery) {
+                            var projectId = groupsQuery[1] || _this.defaultProjectId;
+                            var params = {
+                                projectId: projectId
+                            };
+                            return _this.performGroupsQuery(params, {}).then(function (response) {
+                                return _this.$q.when(response.group.map(function (d) {
+                                    return {
+                                        //text: d.displayName
+                                        text: d.name.split('/')[3]
+                                    };
+                                }));
+                            }, function (err) {
+                                console.log(err);
+                                err = JSON.parse(err.body);
+                                throw err.error;
+                            });
+                        }
+                        var groupMembersQuery = query.match(/^group_members\((([^,]+), *)?([^,]+), *([^,]+), *(.*)\)/);
+                        if (groupMembersQuery) {
+                            var projectId = groupMembersQuery[2] || _this.defaultProjectId;
+                            var groupId = groupMembersQuery[3];
+                            var targetProperty = groupMembersQuery[4];
+                            var filter = groupMembersQuery[5];
+                            var params = {
+                                projectId: projectId,
+                                groupId: groupId,
+                                filter: filter
+                            };
+                            return _this.performGroupsMembersQuery(params, { range: _this.timeSrv.timeRange() }).then(function (response) {
+                                var valuePicker = lodash_1.default.property(targetProperty);
+                                return _this.$q.when(response.members.map(function (d) {
+                                    return { text: valuePicker(d) };
+                                }));
+                            }, function (err) {
+                                console.log(err);
+                                err = JSON.parse(err.body);
+                                throw err.error;
+                            });
+                        }
+                        return Promise.reject(new Error('Invalid query, use one of: metrics(), label_values(), groups(), group_members()'));
+                    });
                 };
                 GoogleStackdriverDatasource.prototype.testDatasource = function () {
                     return this.initialize().then(function () {
