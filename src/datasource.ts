@@ -315,16 +315,21 @@ export default class GoogleStackdriverDatasource {
           data: {
             from: options.range.from.valueOf().toString(),
             to: options.range.to.valueOf().toString(),
-            queries: [{
-              target: params,
-              refId: target.refId,
-              datasourceId: this.id
-            }],
+            queries: [
+              _.extend({
+                refId: target.refId,
+                datasourceId: this.id
+              }, params)
+            ],
           }
         });
       }
     })(params).then(response => {
-      response = JSON.parse(response.body);
+      if (response.body) {
+        response = JSON.parse(response.body);
+      } else {
+        response = response.data.results[""].meta; // backend plugin
+      }
       if (!response.timeSeries) {
         return { timeSeries: [] };
       }
