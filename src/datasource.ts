@@ -352,7 +352,26 @@ export default class GoogleStackdriverDatasource {
     if (target.pageToken) {
       params.pageToken = target.pageToken;
     }
-    return this.gapi.client.monitoring.projects.metricDescriptors.list(params).then(response => {
+    return ((params) => {
+      if (this.access != 'proxy') {
+        return this.gapi.client.monitoring.projects.metricDescriptors.list(params);
+      } else {
+        return this.backendSrv.datasourceRequest({
+          url: '/api/tsdb/query',
+          method: 'POST',
+          data: {
+            from: options.range.from.valueOf().toString(),
+            to: options.range.to.valueOf().toString(),
+            queries: [
+              _.extend({
+                refId: target.refId,
+                datasourceId: this.id
+              }, params)
+            ],
+          }
+        });
+      }
+    })(params).then(response => {
       response = JSON.parse(response.body);
       if (!response.metricDescriptors) {
         return { metricDescriptors: [] };
@@ -375,7 +394,26 @@ export default class GoogleStackdriverDatasource {
     if (target.pageToken) {
       params.pageToken = target.pageToken;
     }
-    return this.gapi.client.monitoring.projects.groups.list(params).then(response => {
+    return ((params) => {
+      if (this.access != 'proxy') {
+        return this.gapi.client.monitoring.projects.groups.list(params);
+      } else {
+        return this.backendSrv.datasourceRequest({
+          url: '/api/tsdb/query',
+          method: 'POST',
+          data: {
+            from: options.range.from.valueOf().toString(),
+            to: options.range.to.valueOf().toString(),
+            queries: [
+              _.extend({
+                refId: target.refId,
+                datasourceId: this.id
+              }, params)
+            ],
+          }
+        });
+      }
+    })(params).then(response => {
       response = JSON.parse(response.body);
       if (!response.group) {
         return { group: [] };
@@ -404,7 +442,26 @@ export default class GoogleStackdriverDatasource {
     }
     params['interval.startTime'] = this.convertTime(options.range.from, false);
     params['interval.endTime'] = this.convertTime(options.range.to, true);
-    return this.gapi.client.monitoring.projects.groups.members.list(params).then(response => {
+    return ((params) => {
+      if (this.access != 'proxy') {
+        return this.gapi.client.monitoring.projects.groups.members.list(params);
+      } else {
+        return this.backendSrv.datasourceRequest({
+          url: '/api/tsdb/query',
+          method: 'POST',
+          data: {
+            from: options.range.from.valueOf().toString(),
+            to: options.range.to.valueOf().toString(),
+            queries: [
+              _.extend({
+                refId: target.refId,
+                datasourceId: this.id
+              }, params)
+            ],
+          }
+        });
+      }
+    })(params).then(response => {
       response = JSON.parse(response.body);
       if (!response.members) {
         return { members: [] };
