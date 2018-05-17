@@ -18,6 +18,8 @@ System.config({
 export default class GoogleStackdriverDatasource {
   type: string;
   name: string;
+  id: string;
+  access: string;
   clientId: string;
   defaultProjectId: string;
   scopes: any;
@@ -26,9 +28,12 @@ export default class GoogleStackdriverDatasource {
   gapi: any;
 
   /** @ngInject */
-  constructor(instanceSettings, private $q, private templateSrv, private timeSrv) {
+  constructor(instanceSettings, private $q, private templateSrv, private timeSrv, private backendSrv) {
     this.type = instanceSettings.type;
     this.name = instanceSettings.name;
+    this.id = instanceSettings.id;
+    //this.access = instanceSettings.access;
+    this.access = 'proxy';
     this.clientId = instanceSettings.jsonData.clientId;
     this.defaultProjectId = instanceSettings.jsonData.defaultProjectId;
     this.scopes = [
@@ -300,7 +305,25 @@ export default class GoogleStackdriverDatasource {
     }
     params['interval.startTime'] = this.convertTime(options.range.from, false);
     params['interval.endTime'] = this.convertTime(options.range.to, true);
-    return this.gapi.client.monitoring.projects.timeSeries.list(params).then(response => {
+    return ((params) => {
+      if (this.access != 'proxy') {
+        return this.gapi.client.monitoring.projects.timeSeries.list(params);
+      } else {
+        return this.backendSrv.datasourceRequest({
+          url: '/api/tsdb/query',
+          method: 'POST',
+          data: {
+            from: options.range.from.valueOf().toString(),
+            to: options.range.to.valueOf().toString(),
+            queries: [{
+              target: params,
+              refId: target.refId,
+              datasourceId: this.id
+            }],
+          }
+        });
+      }
+    })(params).then(response => {
       response = JSON.parse(response.body);
       if (!response.timeSeries) {
         return { timeSeries: [] };

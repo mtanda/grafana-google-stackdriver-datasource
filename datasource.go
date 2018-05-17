@@ -13,6 +13,11 @@ type GoogleStackdriverDatasource struct {
 
 func (t *GoogleStackdriverDatasource) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	response := &datasource.DatasourceResponse{}
+	response.Results = []*datasource.QueryResult{
+		&datasource.QueryResult{
+			MetaJson: "{\"foo\":\"bar\"}",
+		},
+	}
 
 	return response, nil
 }
