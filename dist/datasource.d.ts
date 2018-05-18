@@ -3,8 +3,11 @@ export default class GoogleStackdriverDatasource {
     private $q;
     private templateSrv;
     private timeSrv;
+    private backendSrv;
     type: string;
     name: string;
+    id: string;
+    access: string;
     clientId: string;
     defaultProjectId: string;
     scopes: any;
@@ -12,7 +15,7 @@ export default class GoogleStackdriverDatasource {
     initialized: boolean;
     gapi: any;
     /** @ngInject */
-    constructor(instanceSettings: any, $q: any, templateSrv: any, timeSrv: any);
+    constructor(instanceSettings: any, $q: any, templateSrv: any, timeSrv: any, backendSrv: any);
     query(options: any): any;
     metricFindQuery(query: any): any;
     testDatasource(): any;

@@ -9,6 +9,8 @@
 
   "metrics": true,
   "annotations": false,
+  "backend": true,
+  "executable": "google-stackdriver-plugin",
 
   "info": {
     "description": "Google Stackdriver datasource",

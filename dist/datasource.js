@@ -27,12 +27,15 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
             });
             GoogleStackdriverDatasource = (function () {
                 /** @ngInject */
-                function GoogleStackdriverDatasource(instanceSettings, $q, templateSrv, timeSrv) {
+                function GoogleStackdriverDatasource(instanceSettings, $q, templateSrv, timeSrv, backendSrv) {
                     this.$q = $q;
                     this.templateSrv = templateSrv;
                     this.timeSrv = timeSrv;
+                    this.backendSrv = backendSrv;
                     this.type = instanceSettings.type;
                     this.name = instanceSettings.name;
+                    this.id = instanceSettings.id;
+                    this.access = instanceSettings.jsonData.access;
                     this.clientId = instanceSettings.jsonData.clientId;
                     this.defaultProjectId = instanceSettings.jsonData.defaultProjectId;
                     this.scopes = [
@@ -303,8 +306,35 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                     }
                     params['interval.startTime'] = this.convertTime(options.range.from, false);
                     params['interval.endTime'] = this.convertTime(options.range.to, true);
-                    return this.gapi.client.monitoring.projects.timeSeries.list(params).then(function (response) {
-                        response = JSON.parse(response.body);
+                    return (function (params) {
+                        if (_this.access != 'proxy') {
+                            return _this.gapi.client.monitoring.projects.timeSeries.list(params);
+                        }
+                        else {
+                            return _this.backendSrv.datasourceRequest({
+                                url: '/api/tsdb/query',
+                                method: 'POST',
+                                data: {
+                                    from: options.range.from.valueOf().toString(),
+                                    to: options.range.to.valueOf().toString(),
+                                    queries: [
+                                        lodash_1.default.extend({
+                                            queryType: 'raw',
+                                            api: 'monitoring.projects.timeSeries.list',
+                                            refId: target.refId,
+                                            datasourceId: _this.id
+                                        }, params)
+                                    ],
+                                }
+                            });
+                        }
+                    })(params).then(function (response) {
+                        if (response.body) {
+                            response = JSON.parse(response.body);
+                        }
+                        else {
+                            response = response.data.results[""].meta; // backend plugin
+                        }
                         if (!response.timeSeries) {
                             return { timeSeries: [] };
                         }
@@ -327,7 +357,29 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                     if (target.pageToken) {
                         params.pageToken = target.pageToken;
                     }
-                    return this.gapi.client.monitoring.projects.metricDescriptors.list(params).then(function (response) {
+                    return (function (params) {
+                        if (_this.access != 'proxy') {
+                            return _this.gapi.client.monitoring.projects.metricDescriptors.list(params);
+                        }
+                        else {
+                            return _this.backendSrv.datasourceRequest({
+                                url: '/api/tsdb/query',
+                                method: 'POST',
+                                data: {
+                                    from: options.range.from.valueOf().toString(),
+                                    to: options.range.to.valueOf().toString(),
+                                    queries: [
+                                        lodash_1.default.extend({
+                                            queryType: 'raw',
+                                            api: 'monitoring.projects.metricDescriptors.list',
+                                            refId: target.refId,
+                                            datasourceId: _this.id
+                                        }, params)
+                                    ],
+                                }
+                            });
+                        }
+                    })(params).then(function (response) {
                         response = JSON.parse(response.body);
                         if (!response.metricDescriptors) {
                             return { metricDescriptors: [] };
@@ -350,7 +402,29 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                     if (target.pageToken) {
                         params.pageToken = target.pageToken;
                     }
-                    return this.gapi.client.monitoring.projects.groups.list(params).then(function (response) {
+                    return (function (params) {
+                        if (_this.access != 'proxy') {
+                            return _this.gapi.client.monitoring.projects.groups.list(params);
+                        }
+                        else {
+                            return _this.backendSrv.datasourceRequest({
+                                url: '/api/tsdb/query',
+                                method: 'POST',
+                                data: {
+                                    from: options.range.from.valueOf().toString(),
+                                    to: options.range.to.valueOf().toString(),
+                                    queries: [
+                                        lodash_1.default.extend({
+                                            queryType: 'raw',
+                                            api: 'monitoring.projects.groups.list',
+                                            refId: target.refId,
+                                            datasourceId: _this.id
+                                        }, params)
+                                    ],
+                                }
+                            });
+                        }
+                    })(params).then(function (response) {
                         response = JSON.parse(response.body);
                         if (!response.group) {
                             return { group: [] };
@@ -379,7 +453,29 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                     }
                     params['interval.startTime'] = this.convertTime(options.range.from, false);
                     params['interval.endTime'] = this.convertTime(options.range.to, true);
-                    return this.gapi.client.monitoring.projects.groups.members.list(params).then(function (response) {
+                    return (function (params) {
+                        if (_this.access != 'proxy') {
+                            return _this.gapi.client.monitoring.projects.groups.members.list(params);
+                        }
+                        else {
+                            return _this.backendSrv.datasourceRequest({
+                                url: '/api/tsdb/query',
+                                method: 'POST',
+                                data: {
+                                    from: options.range.from.valueOf().toString(),
+                                    to: options.range.to.valueOf().toString(),
+                                    queries: [
+                                        lodash_1.default.extend({
+                                            queryType: 'raw',
+                                            api: 'monitoring.projects.groups.members.list',
+                                            refId: target.refId,
+                                            datasourceId: _this.id
+                                        }, params)
+                                    ],
+                                }
+                            });
+                        }
+                    })(params).then(function (response) {
                         response = JSON.parse(response.body);
                         if (!response.members) {
                             return { members: [] };
