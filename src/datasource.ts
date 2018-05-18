@@ -246,6 +246,9 @@ export default class GoogleStackdriverDatasource {
   }
 
   initialize() {
+    if (this.access == 'proxy') {
+      return Promise.resolve([]);
+    }
     if (this.initialized) {
       return Promise.resolve(this.gapi.auth2.getAuthInstance().currentUser.get());
     }
