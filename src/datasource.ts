@@ -66,70 +66,7 @@ export default class GoogleStackdriverDatasource {
         }).map(response => {
           return response.timeSeries;
         }));
-        return {
-          data: timeSeries.map(series => {
-            let aliasPattern = series.target.alias;
-            let valueKey = series.valueType.toLowerCase() + 'Value';
-
-            if (valueKey != 'distributionValue') {
-              let datapoints = [];
-              let metricLabel = this.getMetricLabel(aliasPattern, series);
-              for (let point of series.points) {
-                let value = point.value[valueKey];
-                if (!value) {
-                  continue;
-                }
-                switch (valueKey) {
-                  case 'boolValue':
-                    value = value ? 1 : 0; // convert bool value to int
-                    break;
-                }
-                datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
-              }
-              // Stackdriver API returns series in reverse chronological order.
-              datapoints.reverse();
-              return [{ target: metricLabel, datapoints: datapoints }];
-            } else {
-              let buckets = [];
-              let bucketBounds = [];
-
-              let bucketOptions = series.points[0].value.distributionValue.bucketOptions;
-              // set lower bounds
-              // https://cloud.google.com/monitoring/api/ref_v3/rest/v3/TimeSeries#Distribution
-              bucketBounds[0] = 0;
-              if (bucketOptions.linearBuckets) {
-                for (let i = 1; i < bucketOptions.linearBuckets.numFiniteBuckets + 2; i++) {
-                  bucketBounds[i] = bucketOptions.linearBuckets.offset + (bucketOptions.linearBuckets.width * (i - 1));
-                }
-              } else if (bucketOptions.exponentialBuckets) {
-                for (let i = 1; i < bucketOptions.exponentialBuckets.numFiniteBuckets + 2; i++) {
-                  bucketBounds[i] = bucketOptions.exponentialBuckets.scale * (Math.pow(bucketOptions.exponentialBuckets.growthFactor, (i - 1)));
-                }
-              } else if (bucketOptions.explicitBuckets) {
-                for (let i = 1; i < bucketOptions.explicitBuckets.bounds.length + 1; i++) {
-                  bucketBounds[i] = bucketOptions.explicitBuckets.bounds[(i - 1)];
-                }
-              }
-              for (let i = 0; i < bucketBounds.length; i++) {
-                buckets[i] = {
-                  target: this.getMetricLabel(aliasPattern, _.extend(series, { bucket: bucketBounds[i] })),
-                  datapoints: []
-                };
-              }
-              for (let point of series.points) {
-                for (let i = 0; i < point.value.distributionValue.bucketCounts.length; i++) {
-                  let value = parseInt(point.value.distributionValue.bucketCounts[i], 10);
-                  if (value !== 0) {
-                    buckets[i].datapoints.push([value, Date.parse(point.interval.endTime).valueOf()])
-                  }
-                }
-              }
-              return buckets;
-            }
-          }).flatten().filter(series => {
-            return series.datapoints.length > 0;
-          })
-        };
+        return this.transformMetricData(timeSeries);
       }, err => {
         console.log(err);
         err = JSON.parse(err.body);
@@ -137,6 +74,73 @@ export default class GoogleStackdriverDatasource {
         throw err.error;
       });
     });
+  }
+
+  transformMetricData(timeSeries) {
+    return {
+      data: timeSeries.map(series => {
+        let aliasPattern = series.target.alias;
+        let valueKey = series.valueType.toLowerCase() + 'Value';
+
+        if (valueKey != 'distributionValue') {
+          let datapoints = [];
+          let metricLabel = this.getMetricLabel(aliasPattern, series);
+          for (let point of series.points) {
+            let value = point.value[valueKey];
+            if (!value) {
+              continue;
+            }
+            switch (valueKey) {
+              case 'boolValue':
+                value = value ? 1 : 0; // convert bool value to int
+                break;
+            }
+            datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
+          }
+          // Stackdriver API returns series in reverse chronological order.
+          datapoints.reverse();
+          return [{ target: metricLabel, datapoints: datapoints }];
+        } else {
+          let buckets = [];
+          let bucketBounds = [];
+
+          let bucketOptions = series.points[0].value.distributionValue.bucketOptions;
+          // set lower bounds
+          // https://cloud.google.com/monitoring/api/ref_v3/rest/v3/TimeSeries#Distribution
+          bucketBounds[0] = 0;
+          if (bucketOptions.linearBuckets) {
+            for (let i = 1; i < bucketOptions.linearBuckets.numFiniteBuckets + 2; i++) {
+              bucketBounds[i] = bucketOptions.linearBuckets.offset + (bucketOptions.linearBuckets.width * (i - 1));
+            }
+          } else if (bucketOptions.exponentialBuckets) {
+            for (let i = 1; i < bucketOptions.exponentialBuckets.numFiniteBuckets + 2; i++) {
+              bucketBounds[i] = bucketOptions.exponentialBuckets.scale * (Math.pow(bucketOptions.exponentialBuckets.growthFactor, (i - 1)));
+            }
+          } else if (bucketOptions.explicitBuckets) {
+            for (let i = 1; i < bucketOptions.explicitBuckets.bounds.length + 1; i++) {
+              bucketBounds[i] = bucketOptions.explicitBuckets.bounds[(i - 1)];
+            }
+          }
+          for (let i = 0; i < bucketBounds.length; i++) {
+            buckets[i] = {
+              target: this.getMetricLabel(aliasPattern, _.extend(series, { bucket: bucketBounds[i] })),
+              datapoints: []
+            };
+          }
+          for (let point of series.points) {
+            for (let i = 0; i < point.value.distributionValue.bucketCounts.length; i++) {
+              let value = parseInt(point.value.distributionValue.bucketCounts[i], 10);
+              if (value !== 0) {
+                buckets[i].datapoints.push([value, Date.parse(point.interval.endTime).valueOf()])
+              }
+            }
+          }
+          return buckets;
+        }
+      }).flatten().filter(series => {
+        return series.datapoints.length > 0;
+      })
+    };
   }
 
   metricFindQuery(query) {
