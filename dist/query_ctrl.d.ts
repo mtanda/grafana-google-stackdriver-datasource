@@ -3,4 +3,5 @@ import { QueryCtrl } from 'app/plugins/sdk';
 export declare class GoogleStackdriverQueryCtrl extends QueryCtrl {
     static templateUrl: string;
     constructor($scope: any, $injector: any);
+    getDefaultFormat(): string;
 }

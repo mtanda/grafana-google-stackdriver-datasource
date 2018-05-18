@@ -10,5 +10,16 @@ export class GoogleStackdriverQueryCtrl extends QueryCtrl {
 
   constructor($scope, $injector) {
     super($scope, $injector);
+
+    let target = this.target;
+    target.format = target.format || this.getDefaultFormat();
+  }
+
+  getDefaultFormat() {
+    if (this.panelCtrl.panel.type === 'table') {
+      return 'table';
+    }
+
+    return 'time_series';
   }
 }

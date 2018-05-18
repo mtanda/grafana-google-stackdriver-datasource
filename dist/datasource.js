@@ -1,6 +1,6 @@
 ///<reference path="../node_modules/grafana-sdk-mocks/app/headers/common.d.ts" />
-System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_events'], function(exports_1) {
-    var lodash_1, angular_1, dateMath, app_events_1;
+System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_events', 'app/core/table_model'], function(exports_1) {
+    var lodash_1, angular_1, dateMath, app_events_1, table_model_1;
     var GoogleStackdriverDatasource;
     return {
         setters:[
@@ -15,6 +15,9 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
             },
             function (app_events_1_1) {
                 app_events_1 = app_events_1_1;
+            },
+            function (table_model_1_1) {
+                table_model_1 = table_model_1_1;
             }],
         execute: function() {
             System.config({
@@ -69,73 +72,12 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             }).map(function (response) {
                                 return response.timeSeries;
                             }));
-                            return {
-                                data: timeSeries.map(function (series) {
-                                    var aliasPattern = series.target.alias;
-                                    var valueKey = series.valueType.toLowerCase() + 'Value';
-                                    if (valueKey != 'distributionValue') {
-                                        var datapoints = [];
-                                        var metricLabel = _this.getMetricLabel(aliasPattern, series);
-                                        for (var _i = 0, _a = series.points; _i < _a.length; _i++) {
-                                            var point = _a[_i];
-                                            var value = point.value[valueKey];
-                                            if (!value) {
-                                                continue;
-                                            }
-                                            switch (valueKey) {
-                                                case 'boolValue':
-                                                    value = value ? 1 : 0; // convert bool value to int
-                                                    break;
-                                            }
-                                            datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
-                                        }
-                                        // Stackdriver API returns series in reverse chronological order.
-                                        datapoints.reverse();
-                                        return [{ target: metricLabel, datapoints: datapoints }];
-                                    }
-                                    else {
-                                        var buckets = [];
-                                        var bucketBounds = [];
-                                        var bucketOptions = series.points[0].value.distributionValue.bucketOptions;
-                                        // set lower bounds
-                                        // https://cloud.google.com/monitoring/api/ref_v3/rest/v3/TimeSeries#Distribution
-                                        bucketBounds[0] = 0;
-                                        if (bucketOptions.linearBuckets) {
-                                            for (var i = 1; i < bucketOptions.linearBuckets.numFiniteBuckets + 2; i++) {
-                                                bucketBounds[i] = bucketOptions.linearBuckets.offset + (bucketOptions.linearBuckets.width * (i - 1));
-                                            }
-                                        }
-                                        else if (bucketOptions.exponentialBuckets) {
-                                            for (var i = 1; i < bucketOptions.exponentialBuckets.numFiniteBuckets + 2; i++) {
-                                                bucketBounds[i] = bucketOptions.exponentialBuckets.scale * (Math.pow(bucketOptions.exponentialBuckets.growthFactor, (i - 1)));
-                                            }
-                                        }
-                                        else if (bucketOptions.explicitBuckets) {
-                                            for (var i = 1; i < bucketOptions.explicitBuckets.bounds.length + 1; i++) {
-                                                bucketBounds[i] = bucketOptions.explicitBuckets.bounds[(i - 1)];
-                                            }
-                                        }
-                                        for (var i = 0; i < bucketBounds.length; i++) {
-                                            buckets[i] = {
-                                                target: _this.getMetricLabel(aliasPattern, lodash_1.default.extend(series, { bucket: bucketBounds[i] })),
-                                                datapoints: []
-                                            };
-                                        }
-                                        for (var _b = 0, _c = series.points; _b < _c.length; _b++) {
-                                            var point = _c[_b];
-                                            for (var i = 0; i < point.value.distributionValue.bucketCounts.length; i++) {
-                                                var value = parseInt(point.value.distributionValue.bucketCounts[i], 10);
-                                                if (value !== 0) {
-                                                    buckets[i].datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
-                                                }
-                                            }
-                                        }
-                                        return buckets;
-                                    }
-                                }).flatten().filter(function (series) {
-                                    return series.datapoints.length > 0;
-                                })
-                            };
+                            if (options.targets[0].format === 'time_series') {
+                                return _this.transformMetricData(timeSeries);
+                            }
+                            else {
+                                return _this.transformMetricDataToTable(timeSeries);
+                            }
                         }, function (err) {
                             console.log(err);
                             err = JSON.parse(err.body);
@@ -143,6 +85,130 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             throw err.error;
                         });
                     });
+                };
+                GoogleStackdriverDatasource.prototype.transformMetricData = function (timeSeries) {
+                    var _this = this;
+                    return {
+                        data: timeSeries.map(function (series) {
+                            var aliasPattern = series.target.alias;
+                            var valueKey = series.valueType.toLowerCase() + 'Value';
+                            if (valueKey != 'distributionValue') {
+                                var datapoints = [];
+                                var metricLabel = _this.getMetricLabel(aliasPattern, series);
+                                for (var _i = 0, _a = series.points; _i < _a.length; _i++) {
+                                    var point = _a[_i];
+                                    var value = point.value[valueKey];
+                                    if (!value) {
+                                        continue;
+                                    }
+                                    switch (valueKey) {
+                                        case 'boolValue':
+                                            value = value ? 1 : 0; // convert bool value to int
+                                            break;
+                                    }
+                                    datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
+                                }
+                                // Stackdriver API returns series in reverse chronological order.
+                                datapoints.reverse();
+                                return [{ target: metricLabel, datapoints: datapoints }];
+                            }
+                            else {
+                                var buckets = [];
+                                var bucketBounds = [];
+                                var bucketOptions = series.points[0].value.distributionValue.bucketOptions;
+                                // set lower bounds
+                                // https://cloud.google.com/monitoring/api/ref_v3/rest/v3/TimeSeries#Distribution
+                                bucketBounds[0] = 0;
+                                if (bucketOptions.linearBuckets) {
+                                    for (var i = 1; i < bucketOptions.linearBuckets.numFiniteBuckets + 2; i++) {
+                                        bucketBounds[i] = bucketOptions.linearBuckets.offset + (bucketOptions.linearBuckets.width * (i - 1));
+                                    }
+                                }
+                                else if (bucketOptions.exponentialBuckets) {
+                                    for (var i = 1; i < bucketOptions.exponentialBuckets.numFiniteBuckets + 2; i++) {
+                                        bucketBounds[i] = bucketOptions.exponentialBuckets.scale * (Math.pow(bucketOptions.exponentialBuckets.growthFactor, (i - 1)));
+                                    }
+                                }
+                                else if (bucketOptions.explicitBuckets) {
+                                    for (var i = 1; i < bucketOptions.explicitBuckets.bounds.length + 1; i++) {
+                                        bucketBounds[i] = bucketOptions.explicitBuckets.bounds[(i - 1)];
+                                    }
+                                }
+                                for (var i = 0; i < bucketBounds.length; i++) {
+                                    buckets[i] = {
+                                        target: _this.getMetricLabel(aliasPattern, lodash_1.default.extend(series, { bucket: bucketBounds[i] })),
+                                        datapoints: []
+                                    };
+                                }
+                                for (var _b = 0, _c = series.points; _b < _c.length; _b++) {
+                                    var point = _c[_b];
+                                    for (var i = 0; i < point.value.distributionValue.bucketCounts.length; i++) {
+                                        var value = parseInt(point.value.distributionValue.bucketCounts[i], 10);
+                                        if (value !== 0) {
+                                            buckets[i].datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
+                                        }
+                                    }
+                                }
+                                return buckets;
+                            }
+                        }).flatten().filter(function (series) {
+                            return series.datapoints.length > 0;
+                        })
+                    };
+                };
+                GoogleStackdriverDatasource.prototype.transformMetricDataToTable = function (md) {
+                    var table = new table_model_1.default();
+                    var i, j;
+                    var metricLabels = {};
+                    if (md.length === 0) {
+                        return table;
+                    }
+                    // Collect all labels across all metrics
+                    metricLabels['metric.type'] = 1;
+                    metricLabels['resource.type'] = 1;
+                    lodash_1.default.each(md, function (series) {
+                        [
+                            'metric.labels',
+                            'resource.labels',
+                            'metadata.systemLabels',
+                            'metadata.userLabels',
+                        ].forEach(function (path) {
+                            lodash_1.default.map(md, lodash_1.default.property(path)).forEach(function (labels) {
+                                if (labels) {
+                                    lodash_1.default.keys(labels).forEach(function (k) {
+                                        var label = path + '.' + k;
+                                        if (!metricLabels.hasOwnProperty(label)) {
+                                            metricLabels[label] = 1;
+                                        }
+                                    });
+                                }
+                            });
+                        });
+                    });
+                    // Sort metric labels, create columns for them and record their index
+                    var sortedLabels = lodash_1.default.keys(metricLabels).sort();
+                    table.columns.push({ text: 'Time', type: 'time' });
+                    lodash_1.default.each(sortedLabels, function (label, labelIndex) {
+                        metricLabels[label] = labelIndex + 1;
+                        table.columns.push({ text: label });
+                    });
+                    table.columns.push({ text: 'Value' });
+                    // Populate rows, set value to empty string when label not present.
+                    lodash_1.default.each(md, function (series) {
+                        if (series.points) {
+                            for (i = 0; i < series.points.length; i++) {
+                                var point = series.points[i];
+                                var reordered = [Date.parse(point.interval.endTime).valueOf()];
+                                for (j = 0; j < sortedLabels.length; j++) {
+                                    var label = sortedLabels[j];
+                                    reordered.push(lodash_1.default.get(series, label) || '');
+                                }
+                                reordered.push(point.value[lodash_1.default.keys(point.value)[0]]);
+                                table.rows.push(reordered);
+                            }
+                        }
+                    });
+                    return { data: [table] };
                 };
                 GoogleStackdriverDatasource.prototype.metricFindQuery = function (query) {
                     var _this = this;
@@ -247,6 +313,9 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                 };
                 GoogleStackdriverDatasource.prototype.initialize = function () {
                     var _this = this;
+                    if (this.access == 'proxy') {
+                        return Promise.resolve([]);
+                    }
                     if (this.initialized) {
                         return Promise.resolve(this.gapi.auth2.getAuthInstance().currentUser.get());
                     }

@@ -17,6 +17,10 @@ export default class GoogleStackdriverDatasource {
     /** @ngInject */
     constructor(instanceSettings: any, $q: any, templateSrv: any, timeSrv: any, backendSrv: any);
     query(options: any): any;
+    transformMetricData(timeSeries: any): {
+        data: any;
+    };
+    transformMetricDataToTable(md: any): any;
     metricFindQuery(query: any): any;
     testDatasource(): any;
     load(): any;
