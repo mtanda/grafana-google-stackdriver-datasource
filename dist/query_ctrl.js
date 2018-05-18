@@ -19,7 +19,15 @@ System.register(['./query_parameter_ctrl', './mode-stackdriver', 'app/plugins/sd
                 __extends(GoogleStackdriverQueryCtrl, _super);
                 function GoogleStackdriverQueryCtrl($scope, $injector) {
                     _super.call(this, $scope, $injector);
+                    var target = this.target;
+                    target.format = target.format || this.getDefaultFormat();
                 }
+                GoogleStackdriverQueryCtrl.prototype.getDefaultFormat = function () {
+                    if (this.panelCtrl.panel.type === 'table') {
+                        return 'table';
+                    }
+                    return 'time_series';
+                };
                 GoogleStackdriverQueryCtrl.templateUrl = 'partials/query.editor.html';
                 return GoogleStackdriverQueryCtrl;
             })(sdk_1.QueryCtrl);
