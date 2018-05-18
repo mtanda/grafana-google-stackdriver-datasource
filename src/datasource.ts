@@ -5,6 +5,7 @@ import moment from 'moment';
 import angular from 'angular';
 import * as dateMath from 'app/core/utils/datemath';
 import appEvents from 'app/core/app_events';
+import TableModel from 'app/core/table_model';
 
 System.config({
   meta: {
@@ -66,7 +67,11 @@ export default class GoogleStackdriverDatasource {
         }).map(response => {
           return response.timeSeries;
         }));
-        return this.transformMetricData(timeSeries);
+        if (options.targets[0].format === 'time_series') {
+          return this.transformMetricData(timeSeries);
+        } else {
+          return this.transformMetricDataToTable(timeSeries);
+        }
       }, err => {
         console.log(err);
         err = JSON.parse(err.body);
@@ -141,6 +146,66 @@ export default class GoogleStackdriverDatasource {
         return series.datapoints.length > 0;
       })
     };
+  }
+
+  transformMetricDataToTable(md) {
+    var table = new TableModel();
+    var i, j;
+    var metricLabels = {};
+
+    if (md.length === 0) {
+      return table;
+    }
+
+    // Collect all labels across all metrics
+    metricLabels['metric.type'] = 1;
+    metricLabels['resource.type'] = 1;
+    _.each(md, function (series) {
+      [
+        'metric.labels',
+        'resource.labels',
+        'metadata.systemLabels',
+        'metadata.userLabels',
+      ].forEach(path => {
+        _.map(md, _.property(path)).forEach(labels => {
+          if (labels) {
+            _.keys(labels).forEach(k => {
+              let label = path + '.' + k;
+              if (!metricLabels.hasOwnProperty(label)) {
+                metricLabels[label] = 1;
+              }
+            });
+          }
+        });
+      });
+    });
+
+    // Sort metric labels, create columns for them and record their index
+    var sortedLabels = _.keys(metricLabels).sort();
+    table.columns.push({ text: 'Time', type: 'time' });
+    _.each(sortedLabels, function (label, labelIndex) {
+      metricLabels[label] = labelIndex + 1;
+      table.columns.push({ text: label });
+    });
+    table.columns.push({ text: 'Value' });
+
+    // Populate rows, set value to empty string when label not present.
+    _.each(md, function (series) {
+      if (series.points) {
+        for (i = 0; i < series.points.length; i++) {
+          var point = series.points[i];
+          var reordered: any = [Date.parse(point.interval.endTime).valueOf()];
+          for (j = 0; j < sortedLabels.length; j++) {
+            var label = sortedLabels[j];
+            reordered.push(_.get(series, label) || '');
+          }
+          reordered.push(point.value[_.keys(point.value)[0]]);
+          table.rows.push(reordered);
+        }
+      }
+    });
+
+    return { data: [table] };
   }
 
   metricFindQuery(query) {
