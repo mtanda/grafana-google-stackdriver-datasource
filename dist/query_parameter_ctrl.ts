@@ -194,7 +194,7 @@ angular.module('grafana.controllers').controller('GoogleStackdriverQueryParamete
     };
     return $scope.datasource.performTimeSeriesQuery(params, { range: timeSrv.timeRange() }).then(response => {
       let fields = _.uniq(_.flatten(response.timeSeries.map(d => {
-        delete(d.points);
+        delete (d.points);
         return getAllFieldPaths(d);
       }))).map(f => {
         return uiSegmentSrv.newSegment({ value: f, expandable: false });

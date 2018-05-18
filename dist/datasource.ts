@@ -40,7 +40,7 @@ export default class GoogleStackdriverDatasource {
       //'https://www.googleapis.com/auth/monitoring',
       'https://www.googleapis.com/auth/monitoring.read'
     ].join(' ');
-    this.discoveryDocs = [ "https://monitoring.googleapis.com/$discovery/rest?version=v3" ];
+    this.discoveryDocs = ["https://monitoring.googleapis.com/$discovery/rest?version=v3"];
     this.initialized = false;
   }
 
@@ -438,9 +438,9 @@ export default class GoogleStackdriverDatasource {
     target = angular.copy(target);
     let params: any = {};
     params.name = this.templateSrv.replace('projects/'
-     + (target.projectId || this.defaultProjectId)
-     + '/groups/'
-     + target.groupId, options.scopedVars || {});
+      + (target.projectId || this.defaultProjectId)
+      + '/groups/'
+      + target.groupId, options.scopedVars || {});
     params.filter = this.templateSrv.replace(target.filter, options.scopedVars || {});
     if (target.pageToken) {
       params.pageToken = target.pageToken;
@@ -486,9 +486,9 @@ export default class GoogleStackdriverDatasource {
 
   filterSeries(target, response) {
     if (!_.has(target, 'seriesFilter') ||
-        target.seriesFilter.mode === 'NONE' ||
-        target.seriesFilter.type === 'NONE' ||
-        target.seriesFilter.param === '') {
+      target.seriesFilter.mode === 'NONE' ||
+      target.seriesFilter.type === 'NONE' ||
+      target.seriesFilter.param === '') {
       return response;
     }
 
@@ -499,32 +499,32 @@ export default class GoogleStackdriverDatasource {
       series['filterValue'] = this.getSeriesFilterValue(target, series);
     });
 
-    switch(target.seriesFilter.mode) {
-    case 'TOP':
-      response.timeSeries.sort(function(a, b) {
-        return b.filterValue - a.filterValue;
-      });
-      response.timeSeries = response.timeSeries.slice(0, param);
-      return response;
-    case 'BOTTOM':
-      response.timeSeries.sort(function(a, b) {
-        return a.filterValue - b.filterValue;
-      });
-      response.timeSeries = response.timeSeries.slice(0, param);
-      return response;
-    case 'BELOW':
-      response.timeSeries = response.timeSeries.filter(function(elem) {
-        return elem.filterValue < param;
-      });
-      return response;
-    case 'ABOVE':
-      response.timeSeries = response.timeSeries.filter(function(elem) {
-        return elem.filterValue > param;
-      });
-      return response;
-    default:
-      console.log(`Unknown series filter mode: ${target.seriesFilter.mode}`);
-      return response;
+    switch (target.seriesFilter.mode) {
+      case 'TOP':
+        response.timeSeries.sort(function (a, b) {
+          return b.filterValue - a.filterValue;
+        });
+        response.timeSeries = response.timeSeries.slice(0, param);
+        return response;
+      case 'BOTTOM':
+        response.timeSeries.sort(function (a, b) {
+          return a.filterValue - b.filterValue;
+        });
+        response.timeSeries = response.timeSeries.slice(0, param);
+        return response;
+      case 'BELOW':
+        response.timeSeries = response.timeSeries.filter(function (elem) {
+          return elem.filterValue < param;
+        });
+        return response;
+      case 'ABOVE':
+        response.timeSeries = response.timeSeries.filter(function (elem) {
+          return elem.filterValue > param;
+        });
+        return response;
+      default:
+        console.log(`Unknown series filter mode: ${target.seriesFilter.mode}`);
+        return response;
     }
   }
 
@@ -532,31 +532,31 @@ export default class GoogleStackdriverDatasource {
     // For empty timeseries return filter value that will push them out first.
     if (series.points.length == 0) {
       if (target.seriesFilter.mode === 'BOTTOM' ||
-          target.seriesFilter.mode === 'BELOW') {
+        target.seriesFilter.mode === 'BELOW') {
         return Number.MAX_VALUE;
       } else {
         return Number.MIN_VALUE;
       }
     }
     let valueKey = series.valueType.toLowerCase() + 'Value';
-    switch(target.seriesFilter.type) {
-    case 'MAX':
-      return series.points.reduce(function(acc, elem) {
-        return Math.max(acc, elem.value[valueKey]);
-      }, Number.MIN_VALUE);
-    case 'MIN':
-      return series.points.reduce(function(acc, elem) {
-        return Math.min(acc, elem.value[valueKey]);
-      }, Number.MAX_VALUE);
-    case 'AVERAGE':
-      return series.points.reduce(function(acc, elem) {
-        return acc + elem.value[valueKey];
+    switch (target.seriesFilter.type) {
+      case 'MAX':
+        return series.points.reduce(function (acc, elem) {
+          return Math.max(acc, elem.value[valueKey]);
+        }, Number.MIN_VALUE);
+      case 'MIN':
+        return series.points.reduce(function (acc, elem) {
+          return Math.min(acc, elem.value[valueKey]);
+        }, Number.MAX_VALUE);
+      case 'AVERAGE':
+        return series.points.reduce(function (acc, elem) {
+          return acc + elem.value[valueKey];
         }, 0) / series.points.length;
-    case 'CURRENT':
-      return series.points[0].value[valueKey];
-    default:
-      console.log(`Unknown series filter type: ${target.seriesFilter.type}`);
-      return 0;
+      case 'CURRENT':
+        return series.points[0].value[valueKey];
+      default:
+        console.log(`Unknown series filter type: ${target.seriesFilter.type}`);
+        return 0;
     }
   }
 
