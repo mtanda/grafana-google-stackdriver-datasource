@@ -328,7 +328,12 @@ export default class GoogleStackdriverDatasource {
       if (response.body) {
         response = JSON.parse(response.body);
       } else {
-        response = response.data.results[""].meta; // backend plugin
+        // backend plugin
+        response = {
+          timeSeries: _.map(response.data.results, r => {
+            return { timeSeries: r.meta };
+          })
+        };
       }
       if (!response.timeSeries) {
         return { timeSeries: [] };
