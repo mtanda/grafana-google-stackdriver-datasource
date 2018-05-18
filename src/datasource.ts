@@ -70,18 +70,23 @@ export default class GoogleStackdriverDatasource {
         return {
           data: timeSeries.map(series => {
             let aliasPattern = series.target.alias;
-            let valueKey = series.valueType.toLowerCase() + 'Value';
+            let valueKey = series.valueType;
+            if (this.access !== 'proxy') {
+              valueKey = valueKey.toLowerCase();
+            }
+            valueKey += 'Value';
 
             if (valueKey != 'distributionValue') {
               let datapoints = [];
               let metricLabel = this.getMetricLabel(aliasPattern, series);
               for (let point of series.points) {
-                let value = point.value[valueKey];
+                let value = ((this.access !== 'proxy') ? point.value : point.value.Value)[valueKey];
                 if (!value) {
                   continue;
                 }
                 switch (valueKey) {
                   case 'boolValue':
+                  case 'BoolValue':
                     value = value ? 1 : 0; // convert bool value to int
                     break;
                 }
@@ -118,10 +123,11 @@ export default class GoogleStackdriverDatasource {
                 };
               }
               for (let point of series.points) {
-                for (let i = 0; i < point.value.distributionValue.bucketCounts.length; i++) {
-                  let value = parseInt(point.value.distributionValue.bucketCounts[i], 10);
-                  if (value !== 0) {
-                    buckets[i].datapoints.push([value, Date.parse(point.interval.endTime).valueOf()])
+                let value = ((this.access !== 'proxy') ? point.value : point.value.Value)[valueKey];
+                for (let i = 0; i < value.distributionValue.bucketCounts.length; i++) {
+                  let v = parseInt(value.distributionValue.bucketCounts[i], 10);
+                  if (v !== 0) {
+                    buckets[i].datapoints.push([v, Date.parse(point.interval.endTime).valueOf()])
                   }
                 }
               }
@@ -331,7 +337,15 @@ export default class GoogleStackdriverDatasource {
         // backend plugin
         response = {
           timeSeries: _.map(response.data.results, r => {
-            return { timeSeries: r.meta };
+            r.meta.value_type = {
+              1: 'Bool',
+              2: 'Int64',
+              3: 'Double',
+              4: 'String',
+              5: 'Distribution',
+
+            }[r.meta.value_type];
+            return this.snakeToCamel(r.meta);
           })
         };
       }
@@ -599,4 +613,24 @@ export default class GoogleStackdriverDatasource {
     }
     return date.toISOString();
   };
+
+  snakeToCamel(json) {
+    if (!json || !_.isObject(json)) {
+      return json;
+    }
+
+    if (_.isArray(json)) {
+      return json.map((item) => (this.snakeToCamel(item)));
+    }
+
+    let output = {};
+
+    Object.keys(json).forEach((key) => {
+      let value = json[key];
+      let newKey = key.includes('_') ? _.camelCase(key) : key;
+      output[newKey] = this.snakeToCamel(value);
+    });
+
+    return output;
+  }
 }
