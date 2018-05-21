@@ -398,7 +398,7 @@ export default class GoogleStackdriverDatasource {
         });
       }
     })(params).then(response => {
-      if (response.body) {
+      if (this.access != 'proxy') {
         response = JSON.parse(response.body);
       } else {
         response = response.data.results[""].meta; // backend plugin
@@ -433,13 +433,11 @@ export default class GoogleStackdriverDatasource {
           url: '/api/tsdb/query',
           method: 'POST',
           data: {
-            from: options.range.from.valueOf().toString(),
-            to: options.range.to.valueOf().toString(),
             queries: [
               _.extend({
                 queryType: 'raw',
                 api: 'monitoring.projects.metricDescriptors.list',
-                refId: target.refId,
+                refId: '',
                 datasourceId: this.id
               }, params)
             ],
@@ -447,7 +445,11 @@ export default class GoogleStackdriverDatasource {
         });
       }
     })(params).then(response => {
-      response = JSON.parse(response.body);
+      if (this.access != 'proxy') {
+        response = JSON.parse(response.body);
+      } else {
+        response = response.data.results[""].meta; // backend plugin
+      }
       if (!response.metricDescriptors) {
         return { metricDescriptors: [] };
       }
@@ -477,13 +479,11 @@ export default class GoogleStackdriverDatasource {
           url: '/api/tsdb/query',
           method: 'POST',
           data: {
-            from: options.range.from.valueOf().toString(),
-            to: options.range.to.valueOf().toString(),
             queries: [
               _.extend({
                 queryType: 'raw',
                 api: 'monitoring.projects.groups.list',
-                refId: target.refId,
+                refId: '',
                 datasourceId: this.id
               }, params)
             ],
@@ -491,7 +491,11 @@ export default class GoogleStackdriverDatasource {
         });
       }
     })(params).then(response => {
-      response = JSON.parse(response.body);
+      if (this.access != 'proxy') {
+        response = JSON.parse(response.body);
+      } else {
+        response = response.data.results[""].meta; // backend plugin
+      }
       if (!response.group) {
         return { group: [] };
       }
@@ -533,7 +537,7 @@ export default class GoogleStackdriverDatasource {
               _.extend({
                 queryType: 'raw',
                 api: 'monitoring.projects.groups.members.list',
-                refId: target.refId,
+                refId: '',
                 datasourceId: this.id
               }, params)
             ],
@@ -541,7 +545,11 @@ export default class GoogleStackdriverDatasource {
         });
       }
     })(params).then(response => {
-      response = JSON.parse(response.body);
+      if (this.access != 'proxy') {
+        response = JSON.parse(response.body);
+      } else {
+        response = response.data.results[""].meta; // backend plugin
+      }
       if (!response.members) {
         return { members: [] };
       }
