@@ -32,5 +32,6 @@ export default class GoogleStackdriverDatasource {
     filterSeries(target: any, response: any): any;
     getSeriesFilterValue(target: any, series: any): any;
     getMetricLabel(alias: any, series: any): any;
+    calcBucketBound(bucketOptions: any, n: any): number;
     convertTime(date: any, roundUp: any): any;
 }
