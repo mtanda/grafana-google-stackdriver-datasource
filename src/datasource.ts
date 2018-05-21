@@ -67,10 +67,10 @@ export default class GoogleStackdriverDatasource {
         }).map(response => {
           return response.timeSeries;
         }));
-        if (options.targets[0].format === 'time_series') {
-          return this.transformMetricData(timeSeries);
-        } else {
+        if (options.targets[0].format === 'table') {
           return this.transformMetricDataToTable(timeSeries);
+        } else {
+          return this.transformMetricData(timeSeries);
         }
       }, err => {
         console.log(err);
