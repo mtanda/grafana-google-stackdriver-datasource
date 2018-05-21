@@ -72,11 +72,11 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             }).map(function (response) {
                                 return response.timeSeries;
                             }));
-                            if (options.targets[0].format === 'time_series') {
-                                return _this.transformMetricData(timeSeries);
+                            if (options.targets[0].format === 'table') {
+                                return _this.transformMetricDataToTable(timeSeries);
                             }
                             else {
-                                return _this.transformMetricDataToTable(timeSeries);
+                                return _this.transformMetricData(timeSeries);
                             }
                         }, function (err) {
                             console.log(err);
@@ -114,38 +114,33 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             }
                             else {
                                 var buckets = [];
-                                var bucketBounds = [];
-                                var bucketOptions = series.points[0].value.distributionValue.bucketOptions;
-                                // set lower bounds
-                                // https://cloud.google.com/monitoring/api/ref_v3/rest/v3/TimeSeries#Distribution
-                                bucketBounds[0] = 0;
-                                if (bucketOptions.linearBuckets) {
-                                    for (var i = 1; i < bucketOptions.linearBuckets.numFiniteBuckets + 2; i++) {
-                                        bucketBounds[i] = bucketOptions.linearBuckets.offset + (bucketOptions.linearBuckets.width * (i - 1));
-                                    }
-                                }
-                                else if (bucketOptions.exponentialBuckets) {
-                                    for (var i = 1; i < bucketOptions.exponentialBuckets.numFiniteBuckets + 2; i++) {
-                                        bucketBounds[i] = bucketOptions.exponentialBuckets.scale * (Math.pow(bucketOptions.exponentialBuckets.growthFactor, (i - 1)));
-                                    }
-                                }
-                                else if (bucketOptions.explicitBuckets) {
-                                    for (var i = 1; i < bucketOptions.explicitBuckets.bounds.length + 1; i++) {
-                                        bucketBounds[i] = bucketOptions.explicitBuckets.bounds[(i - 1)];
-                                    }
-                                }
-                                for (var i = 0; i < bucketBounds.length; i++) {
-                                    buckets[i] = {
-                                        target: _this.getMetricLabel(aliasPattern, lodash_1.default.extend(series, { bucket: bucketBounds[i] })),
-                                        datapoints: []
-                                    };
-                                }
                                 for (var _b = 0, _c = series.points; _b < _c.length; _b++) {
                                     var point = _c[_b];
+                                    if (!point.value.distributionValue.bucketCounts) {
+                                        continue;
+                                    }
                                     for (var i = 0; i < point.value.distributionValue.bucketCounts.length; i++) {
                                         var value = parseInt(point.value.distributionValue.bucketCounts[i], 10);
-                                        if (value !== 0) {
-                                            buckets[i].datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
+                                        if (!buckets[i]) {
+                                            // set lower bounds
+                                            // https://cloud.google.com/monitoring/api/ref_v3/rest/v3/TimeSeries#Distribution
+                                            var bucketBound = _this.calcBucketBound(point.value.distributionValue.bucketOptions, i);
+                                            buckets[i] = {
+                                                target: _this.getMetricLabel(aliasPattern, lodash_1.default.extend(series, { bucket: bucketBound })),
+                                                datapoints: []
+                                            };
+                                        }
+                                        buckets[i].datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
+                                    }
+                                    // fill empty bucket
+                                    var n = lodash_1.default.max(lodash_1.default.keys(buckets));
+                                    for (var i = 0; i < n; i++) {
+                                        if (!buckets[i]) {
+                                            var bucketBound = _this.calcBucketBound(point.value.distributionValue.bucketOptions, i);
+                                            buckets[i] = {
+                                                target: _this.getMetricLabel(aliasPattern, lodash_1.default.extend(series, { bucket: bucketBound })),
+                                                datapoints: []
+                                            };
                                         }
                                     }
                                 }
@@ -649,7 +644,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                         metric: series.metric,
                         resource: series.resource
                     };
-                    if (series.bucket) {
+                    if (!lodash_1.default.isUndefined(series.bucket)) {
                         aliasData['bucket'] = series.bucket;
                     }
                     if (alias === '') {
@@ -658,7 +653,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                     var aliasRegex = /\{\{(.+?)\}\}/g;
                     alias = alias.replace(aliasRegex, function (match, g1) {
                         var matchedValue = lodash_1.default.property(g1)(aliasData);
-                        if (matchedValue) {
+                        if (!lodash_1.default.isUndefined(matchedValue)) {
                             return matchedValue;
                         }
                         return g1;
@@ -668,7 +663,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                         try {
                             var matchedValue = lodash_1.default.property(g1)(aliasData);
                             var labelRegex = new RegExp(g2);
-                            if (matchedValue) {
+                            if (!lodash_1.default.isUndefined(matchedValue)) {
                                 return matchedValue.replace(labelRegex, g3);
                             }
                         }
@@ -677,6 +672,22 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                         return "sub(" + g1 + ", \"" + g2 + "\", \"" + g3 + "\")";
                     });
                     return alias;
+                };
+                GoogleStackdriverDatasource.prototype.calcBucketBound = function (bucketOptions, n) {
+                    var bucketBound = 0;
+                    if (n === 0) {
+                        return bucketBound;
+                    }
+                    if (bucketOptions.linearBuckets) {
+                        bucketBound = bucketOptions.linearBuckets.offset + (bucketOptions.linearBuckets.width * (n - 1));
+                    }
+                    else if (bucketOptions.exponentialBuckets) {
+                        bucketBound = bucketOptions.exponentialBuckets.scale * (Math.pow(bucketOptions.exponentialBuckets.growthFactor, (n - 1)));
+                    }
+                    else if (bucketOptions.explicitBuckets) {
+                        bucketBound = bucketOptions.explicitBuckets.bounds[(n - 1)];
+                    }
+                    return bucketBound;
                 };
                 GoogleStackdriverDatasource.prototype.convertTime = function (date, roundUp) {
                     if (lodash_1.default.isString(date)) {
