@@ -107,39 +107,34 @@ export default class GoogleStackdriverDatasource {
           return [{ target: metricLabel, datapoints: datapoints }];
         } else {
           let buckets = [];
-          let bucketBounds = [];
 
-          let bucketOptions = series.points[0].value.distributionValue.bucketOptions;
-          // set lower bounds
-          // https://cloud.google.com/monitoring/api/ref_v3/rest/v3/TimeSeries#Distribution
-          bucketBounds[0] = 0;
-          if (bucketOptions.linearBuckets) {
-            for (let i = 1; i < bucketOptions.linearBuckets.numFiniteBuckets + 2; i++) {
-              bucketBounds[i] = bucketOptions.linearBuckets.offset + (bucketOptions.linearBuckets.width * (i - 1));
-            }
-          } else if (bucketOptions.exponentialBuckets) {
-            for (let i = 1; i < bucketOptions.exponentialBuckets.numFiniteBuckets + 2; i++) {
-              bucketBounds[i] = bucketOptions.exponentialBuckets.scale * (Math.pow(bucketOptions.exponentialBuckets.growthFactor, (i - 1)));
-            }
-          } else if (bucketOptions.explicitBuckets) {
-            for (let i = 1; i < bucketOptions.explicitBuckets.bounds.length + 1; i++) {
-              bucketBounds[i] = bucketOptions.explicitBuckets.bounds[(i - 1)];
-            }
-          }
-          for (let i = 0; i < bucketBounds.length; i++) {
-            buckets[i] = {
-              target: this.getMetricLabel(aliasPattern, _.extend(series, { bucket: bucketBounds[i] })),
-              datapoints: []
-            };
-          }
           for (let point of series.points) {
             if (!point.value.distributionValue.bucketCounts) {
               continue;
             }
             for (let i = 0; i < point.value.distributionValue.bucketCounts.length; i++) {
               let value = parseInt(point.value.distributionValue.bucketCounts[i], 10);
-              if (value !== 0) {
-                buckets[i].datapoints.push([value, Date.parse(point.interval.endTime).valueOf()])
+              if (!buckets[i]) {
+                // set lower bounds
+                // https://cloud.google.com/monitoring/api/ref_v3/rest/v3/TimeSeries#Distribution
+                let bucketBound = this.calcBucketBound(point.value.distributionValue.bucketOptions, i);
+                buckets[i] = {
+                  target: this.getMetricLabel(aliasPattern, _.extend(series, { bucket: bucketBound })),
+                  datapoints: []
+                };
+              }
+              buckets[i].datapoints.push([value, Date.parse(point.interval.endTime).valueOf()])
+            }
+
+            // fill empty bucket
+            let n = _.max(_.keys(buckets));
+            for (let i = 0; i < n; i++) {
+              if (!buckets[i]) {
+                let bucketBound = this.calcBucketBound(point.value.distributionValue.bucketOptions, i);
+                buckets[i] = {
+                  target: this.getMetricLabel(aliasPattern, _.extend(series, { bucket: bucketBound })),
+                  datapoints: []
+                };
               }
             }
           }
@@ -648,7 +643,7 @@ export default class GoogleStackdriverDatasource {
       metric: series.metric,
       resource: series.resource
     };
-    if (series.bucket) {
+    if (!_.isUndefined(series.bucket)) {
       aliasData['bucket'] = series.bucket;
     }
     if (alias === '') {
@@ -657,7 +652,7 @@ export default class GoogleStackdriverDatasource {
     let aliasRegex = /\{\{(.+?)\}\}/g;
     alias = alias.replace(aliasRegex, (match, g1) => {
       let matchedValue = _.property(g1)(aliasData);
-      if (matchedValue) {
+      if (!_.isUndefined(matchedValue)) {
         return matchedValue;
       }
       return g1;
@@ -667,7 +662,7 @@ export default class GoogleStackdriverDatasource {
       try {
         let matchedValue = _.property(g1)(aliasData);
         let labelRegex = new RegExp(g2);
-        if (matchedValue) {
+        if (!_.isUndefined(matchedValue)) {
           return matchedValue.replace(labelRegex, g3);
         }
       } catch (e) {
@@ -676,6 +671,22 @@ export default class GoogleStackdriverDatasource {
       return `sub(${g1}, "${g2}", "${g3}")`;
     });
     return alias;
+  }
+
+  calcBucketBound(bucketOptions, n) {
+    let bucketBound = 0;
+    if (n === 0) {
+      return bucketBound;
+    }
+
+    if (bucketOptions.linearBuckets) {
+      bucketBound = bucketOptions.linearBuckets.offset + (bucketOptions.linearBuckets.width * (n - 1));
+    } else if (bucketOptions.exponentialBuckets) {
+      bucketBound = bucketOptions.exponentialBuckets.scale * (Math.pow(bucketOptions.exponentialBuckets.growthFactor, (n - 1)));
+    } else if (bucketOptions.explicitBuckets) {
+      bucketBound = bucketOptions.explicitBuckets.bounds[(n - 1)];
+    }
+    return bucketBound;
   }
 
   convertTime(date, roundUp) {
