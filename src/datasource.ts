@@ -133,6 +133,9 @@ export default class GoogleStackdriverDatasource {
             };
           }
           for (let point of series.points) {
+            if (!point.value.distributionValue.bucketCounts) {
+              continue;
+            }
             for (let i = 0; i < point.value.distributionValue.bucketCounts.length; i++) {
               let value = parseInt(point.value.distributionValue.bucketCounts[i], 10);
               if (value !== 0) {
