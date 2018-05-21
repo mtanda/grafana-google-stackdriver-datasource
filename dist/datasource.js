@@ -398,7 +398,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             });
                         }
                     })(params).then(function (response) {
-                        if (response.body) {
+                        if (_this.access != 'proxy') {
                             response = JSON.parse(response.body);
                         }
                         else {
@@ -435,13 +435,11 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                                 url: '/api/tsdb/query',
                                 method: 'POST',
                                 data: {
-                                    from: options.range.from.valueOf().toString(),
-                                    to: options.range.to.valueOf().toString(),
                                     queries: [
                                         lodash_1.default.extend({
                                             queryType: 'raw',
                                             api: 'monitoring.projects.metricDescriptors.list',
-                                            refId: target.refId,
+                                            refId: '',
                                             datasourceId: _this.id
                                         }, params)
                                     ],
@@ -449,7 +447,12 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             });
                         }
                     })(params).then(function (response) {
-                        response = JSON.parse(response.body);
+                        if (_this.access != 'proxy') {
+                            response = JSON.parse(response.body);
+                        }
+                        else {
+                            response = response.data.results[""].meta; // backend plugin
+                        }
                         if (!response.metricDescriptors) {
                             return { metricDescriptors: [] };
                         }
@@ -480,13 +483,11 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                                 url: '/api/tsdb/query',
                                 method: 'POST',
                                 data: {
-                                    from: options.range.from.valueOf().toString(),
-                                    to: options.range.to.valueOf().toString(),
                                     queries: [
                                         lodash_1.default.extend({
                                             queryType: 'raw',
                                             api: 'monitoring.projects.groups.list',
-                                            refId: target.refId,
+                                            refId: '',
                                             datasourceId: _this.id
                                         }, params)
                                     ],
@@ -494,7 +495,12 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             });
                         }
                     })(params).then(function (response) {
-                        response = JSON.parse(response.body);
+                        if (_this.access != 'proxy') {
+                            response = JSON.parse(response.body);
+                        }
+                        else {
+                            response = response.data.results[""].meta; // backend plugin
+                        }
                         if (!response.group) {
                             return { group: [] };
                         }
@@ -537,7 +543,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                                         lodash_1.default.extend({
                                             queryType: 'raw',
                                             api: 'monitoring.projects.groups.members.list',
-                                            refId: target.refId,
+                                            refId: '',
                                             datasourceId: _this.id
                                         }, params)
                                     ],
@@ -545,7 +551,12 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             });
                         }
                     })(params).then(function (response) {
-                        response = JSON.parse(response.body);
+                        if (_this.access != 'proxy') {
+                            response = JSON.parse(response.body);
+                        }
+                        else {
+                            response = response.data.results[""].meta; // backend plugin
+                        }
                         if (!response.members) {
                             return { members: [] };
                         }
