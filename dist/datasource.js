@@ -288,8 +288,20 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                     });
                 };
                 GoogleStackdriverDatasource.prototype.testDatasource = function () {
+                    var _this = this;
                     return this.initialize().then(function () {
-                        return { status: 'success', message: 'Data source is working', title: 'Success' };
+                        if (_this.access === 'proxy' && _this.defaultProjectId) {
+                            var params = {
+                                projectId: _this.defaultProjectId,
+                                filter: ''
+                            };
+                            return _this.performMetricDescriptorsQuery(params, {}).then(function (response) {
+                                return { status: 'success', message: 'Data source is working', title: 'Success' };
+                            });
+                        }
+                        else {
+                            return { status: 'success', message: 'Data source is working', title: 'Success' };
+                        }
                     }).catch(function (err) {
                         console.log(err);
                         return { status: "error", message: err.message, title: "Error" };

@@ -294,7 +294,17 @@ export default class GoogleStackdriverDatasource {
 
   testDatasource() {
     return this.initialize().then(() => {
-      return { status: 'success', message: 'Data source is working', title: 'Success' };
+      if (this.access === 'proxy' && this.defaultProjectId) {
+        let params = {
+          projectId: this.defaultProjectId,
+          filter: ''
+        };
+        return this.performMetricDescriptorsQuery(params, {}).then(response => {
+          return { status: 'success', message: 'Data source is working', title: 'Success' };
+        });
+      } else {
+        return { status: 'success', message: 'Data source is working', title: 'Success' };
+      }
     }).catch(err => {
       console.log(err);
       return { status: "error", message: err.message, title: "Error" };
