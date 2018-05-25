@@ -351,6 +351,21 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                         });
                     });
                 };
+                GoogleStackdriverDatasource.prototype.backendPluginRawRequest = function (params) {
+                    return this.backendSrv.datasourceRequest(params).then(function (response) {
+                        return {
+                            result: response.data.results[""].meta
+                        };
+                    }).catch(function (err) {
+                        throw {
+                            body: JSON.stringify({
+                                error: {
+                                    message: err.data.results[""].error
+                                }
+                            })
+                        };
+                    });
+                };
                 GoogleStackdriverDatasource.prototype.performTimeSeriesQuery = function (target, options) {
                     var _this = this;
                     target = angular_1.default.copy(target);
@@ -387,7 +402,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             return _this.gapi.client.monitoring.projects.timeSeries.list(params);
                         }
                         else {
-                            return _this.backendSrv.datasourceRequest({
+                            return _this.backendPluginRawRequest({
                                 url: '/api/tsdb/query',
                                 method: 'POST',
                                 data: {
@@ -405,12 +420,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             });
                         }
                     })(params).then(function (response) {
-                        if (_this.access != 'proxy') {
-                            response = JSON.parse(response.body);
-                        }
-                        else {
-                            response = response.data.results[""].meta; // backend plugin
-                        }
+                        response = response.result;
                         if (!response.timeSeries) {
                             return { timeSeries: [] };
                         }
@@ -438,7 +448,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             return _this.gapi.client.monitoring.projects.metricDescriptors.list(params);
                         }
                         else {
-                            return _this.backendSrv.datasourceRequest({
+                            return _this.backendPluginRawRequest({
                                 url: '/api/tsdb/query',
                                 method: 'POST',
                                 data: {
@@ -454,12 +464,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             });
                         }
                     })(params).then(function (response) {
-                        if (_this.access != 'proxy') {
-                            response = JSON.parse(response.body);
-                        }
-                        else {
-                            response = response.data.results[""].meta; // backend plugin
-                        }
+                        response = response.result;
                         if (!response.metricDescriptors) {
                             return { metricDescriptors: [] };
                         }
@@ -486,7 +491,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             return _this.gapi.client.monitoring.projects.groups.list(params);
                         }
                         else {
-                            return _this.backendSrv.datasourceRequest({
+                            return _this.backendPluginRawRequest({
                                 url: '/api/tsdb/query',
                                 method: 'POST',
                                 data: {
@@ -502,12 +507,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             });
                         }
                     })(params).then(function (response) {
-                        if (_this.access != 'proxy') {
-                            response = JSON.parse(response.body);
-                        }
-                        else {
-                            response = response.data.results[""].meta; // backend plugin
-                        }
+                        response = response.result;
                         if (!response.group) {
                             return { group: [] };
                         }
@@ -540,7 +540,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             return _this.gapi.client.monitoring.projects.groups.members.list(params);
                         }
                         else {
-                            return _this.backendSrv.datasourceRequest({
+                            return _this.backendPluginRawRequest({
                                 url: '/api/tsdb/query',
                                 method: 'POST',
                                 data: {
@@ -558,12 +558,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             });
                         }
                     })(params).then(function (response) {
-                        if (_this.access != 'proxy') {
-                            response = JSON.parse(response.body);
-                        }
-                        else {
-                            response = response.data.results[""].meta; // backend plugin
-                        }
+                        response = response.result;
                         if (!response.members) {
                             return { members: [] };
                         }
