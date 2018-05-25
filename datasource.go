@@ -42,22 +42,40 @@ func init() {
 
 func (t *GoogleStackdriverDatasource) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	var response *datasource.DatasourceResponse
-	var err error
 
 	if initializeError != nil {
-		return nil, initializeError
+		return &datasource.DatasourceResponse{
+			Results: []*datasource.QueryResult{
+				&datasource.QueryResult{
+					Error: "datasource initialize error",
+				},
+			},
+		}, nil
 	}
 
 	modelJson, err := simplejson.NewJson([]byte(tsdbReq.Queries[0].ModelJson))
 	if err != nil {
-		return nil, err
+		return &datasource.DatasourceResponse{
+			Results: []*datasource.QueryResult{
+				&datasource.QueryResult{
+					Error: err.Error(),
+				},
+			},
+		}, nil
 	}
 	switch modelJson.Get("queryType").MustString() {
 	case "raw":
 		api := modelJson.Get("api").MustString()
+		var err error
 		response, err = t.handleRawQuery(api, tsdbReq)
 		if err != nil {
-			return nil, err
+			return &datasource.DatasourceResponse{
+				Results: []*datasource.QueryResult{
+					&datasource.QueryResult{
+						Error: err.Error(),
+					},
+				},
+			}, nil
 		}
 	}
 	return response, nil
