@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"time"
 
@@ -21,25 +20,33 @@ type GoogleStackdriverDatasource struct {
 }
 
 var monitoringService *monitoring.Service
+var initializeError error
 
 func init() {
 	ctx := context.Background()
 
-	var err error
 	googleClient, err := google.DefaultClient(ctx, monitoring.MonitoringReadScope)
 	if err != nil {
-		os.Exit(-1)
+		initializeError = err
+		return
 	}
 
-	monitoringService, err = monitoring.New(googleClient)
+	service, err := monitoring.New(googleClient)
 	if err != nil {
-		os.Exit(-1)
+		initializeError = err
+		return
 	}
+
+	monitoringService = service
 }
 
 func (t *GoogleStackdriverDatasource) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	var response *datasource.DatasourceResponse
 	var err error
+
+	if initializeError != nil {
+		return nil, initializeError
+	}
 
 	modelJson, err := simplejson.NewJson([]byte(tsdbReq.Queries[0].ModelJson))
 	if err != nil {
