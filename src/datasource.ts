@@ -356,6 +356,22 @@ export default class GoogleStackdriverDatasource {
     });
   }
 
+  backendPluginRawRequest(params) {
+    return this.backendSrv.datasourceRequest(params).then(response => {
+      return {
+        result: response.data.results[""].meta
+      };
+    }).catch(err => {
+      throw {
+        body: JSON.stringify({
+          error: {
+            message: err.data.results[""].error
+          }
+        })
+      };
+    });
+  }
+
   performTimeSeriesQuery(target, options) {
     target = angular.copy(target);
     let params: any = {};
@@ -388,7 +404,7 @@ export default class GoogleStackdriverDatasource {
       if (this.access != 'proxy') {
         return this.gapi.client.monitoring.projects.timeSeries.list(params);
       } else {
-        return this.backendSrv.datasourceRequest({
+        return this.backendPluginRawRequest({
           url: '/api/tsdb/query',
           method: 'POST',
           data: {
@@ -406,11 +422,7 @@ export default class GoogleStackdriverDatasource {
         });
       }
     })(params).then(response => {
-      if (this.access != 'proxy') {
-        response = JSON.parse(response.body);
-      } else {
-        response = response.data.results[""].meta; // backend plugin
-      }
+      response = response.result;
       if (!response.timeSeries) {
         return { timeSeries: [] };
       }
@@ -437,7 +449,7 @@ export default class GoogleStackdriverDatasource {
       if (this.access != 'proxy') {
         return this.gapi.client.monitoring.projects.metricDescriptors.list(params);
       } else {
-        return this.backendSrv.datasourceRequest({
+        return this.backendPluginRawRequest({
           url: '/api/tsdb/query',
           method: 'POST',
           data: {
@@ -453,11 +465,7 @@ export default class GoogleStackdriverDatasource {
         });
       }
     })(params).then(response => {
-      if (this.access != 'proxy') {
-        response = JSON.parse(response.body);
-      } else {
-        response = response.data.results[""].meta; // backend plugin
-      }
+      response = response.result;
       if (!response.metricDescriptors) {
         return { metricDescriptors: [] };
       }
@@ -483,7 +491,7 @@ export default class GoogleStackdriverDatasource {
       if (this.access != 'proxy') {
         return this.gapi.client.monitoring.projects.groups.list(params);
       } else {
-        return this.backendSrv.datasourceRequest({
+        return this.backendPluginRawRequest({
           url: '/api/tsdb/query',
           method: 'POST',
           data: {
@@ -499,11 +507,7 @@ export default class GoogleStackdriverDatasource {
         });
       }
     })(params).then(response => {
-      if (this.access != 'proxy') {
-        response = JSON.parse(response.body);
-      } else {
-        response = response.data.results[""].meta; // backend plugin
-      }
+      response = response.result;
       if (!response.group) {
         return { group: [] };
       }
@@ -535,7 +539,7 @@ export default class GoogleStackdriverDatasource {
       if (this.access != 'proxy') {
         return this.gapi.client.monitoring.projects.groups.members.list(params);
       } else {
-        return this.backendSrv.datasourceRequest({
+        return this.backendPluginRawRequest({
           url: '/api/tsdb/query',
           method: 'POST',
           data: {
@@ -553,11 +557,7 @@ export default class GoogleStackdriverDatasource {
         });
       }
     })(params).then(response => {
-      if (this.access != 'proxy') {
-        response = JSON.parse(response.body);
-      } else {
-        response = response.data.results[""].meta; // backend plugin
-      }
+      response = response.result;
       if (!response.members) {
         return { members: [] };
       }
