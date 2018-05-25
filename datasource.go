@@ -44,13 +44,7 @@ func (t *GoogleStackdriverDatasource) Query(ctx context.Context, tsdbReq *dataso
 	var response *datasource.DatasourceResponse
 
 	if initializeError != nil {
-		return &datasource.DatasourceResponse{
-			Results: []*datasource.QueryResult{
-				&datasource.QueryResult{
-					Error: "datasource initialize error",
-				},
-			},
-		}, nil
+		return nil, initializeError
 	}
 
 	modelJson, err := simplejson.NewJson([]byte(tsdbReq.Queries[0].ModelJson))
