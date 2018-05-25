@@ -25,6 +25,7 @@ export default class GoogleStackdriverDatasource {
     testDatasource(): any;
     load(): any;
     initialize(): any;
+    backendPluginRawRequest(params: any): any;
     performTimeSeriesQuery(target: any, options: any): any;
     performMetricDescriptorsQuery(target: any, options: any): any;
     performGroupsQuery(target: any, options: any): any;

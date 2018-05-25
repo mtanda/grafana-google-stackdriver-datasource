@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"time"
 
@@ -21,36 +20,62 @@ type GoogleStackdriverDatasource struct {
 }
 
 var monitoringService *monitoring.Service
+var initializeError error
 
 func init() {
 	ctx := context.Background()
 
-	var err error
 	googleClient, err := google.DefaultClient(ctx, monitoring.MonitoringReadScope)
 	if err != nil {
-		os.Exit(-1)
+		initializeError = err
+		return
 	}
 
-	monitoringService, err = monitoring.New(googleClient)
+	service, err := monitoring.New(googleClient)
 	if err != nil {
-		os.Exit(-1)
+		initializeError = err
+		return
 	}
+
+	monitoringService = service
 }
 
 func (t *GoogleStackdriverDatasource) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	var response *datasource.DatasourceResponse
-	var err error
+
+	if initializeError != nil {
+		return &datasource.DatasourceResponse{
+			Results: []*datasource.QueryResult{
+				&datasource.QueryResult{
+					Error: "datasource initialize error",
+				},
+			},
+		}, nil
+	}
 
 	modelJson, err := simplejson.NewJson([]byte(tsdbReq.Queries[0].ModelJson))
 	if err != nil {
-		return nil, err
+		return &datasource.DatasourceResponse{
+			Results: []*datasource.QueryResult{
+				&datasource.QueryResult{
+					Error: err.Error(),
+				},
+			},
+		}, nil
 	}
 	switch modelJson.Get("queryType").MustString() {
 	case "raw":
 		api := modelJson.Get("api").MustString()
+		var err error
 		response, err = t.handleRawQuery(api, tsdbReq)
 		if err != nil {
-			return nil, err
+			return &datasource.DatasourceResponse{
+				Results: []*datasource.QueryResult{
+					&datasource.QueryResult{
+						Error: err.Error(),
+					},
+				},
+			}, nil
 		}
 	}
 	return response, nil
