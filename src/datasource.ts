@@ -47,37 +47,39 @@ export default class GoogleStackdriverDatasource {
 
   query(options) {
     return this.initialize().then(() => {
-      return Promise.all(options.targets.map(target => {
-        target = angular.copy(target);
-        let filter = 'metric.type = "' + this.templateSrv.replace(target.metricType, options.scopedVars || {}) + '"';
-        if (target.filter) {
-          filter += ' AND ' + this.templateSrv.replace(target.filter, options.scopedVars || {});
-        }
-        target.filter = filter;
-        return this.performTimeSeriesQuery(target, options).then(response => {
-          appEvents.emit('ds-request-response', response);
-          response.timeSeries.forEach(series => {
-            series.target = target;
+      return Promise.all(options.targets
+        .filter(target => !target.hide)
+        .map(target => {
+          target = angular.copy(target);
+          let filter = 'metric.type = "' + this.templateSrv.replace(target.metricType, options.scopedVars || {}) + '"';
+          if (target.filter) {
+            filter += ' AND ' + this.templateSrv.replace(target.filter, options.scopedVars || {});
+          }
+          target.filter = filter;
+          return this.performTimeSeriesQuery(target, options).then(response => {
+            appEvents.emit('ds-request-response', response);
+            response.timeSeries.forEach(series => {
+              series.target = target;
+            });
+            return this.filterSeries(target, response);
           });
-          return this.filterSeries(target, response);
+        })).then((responses: any) => {
+          let timeSeries = _.flatten(responses.filter(response => {
+            return !!response.timeSeries;
+          }).map(response => {
+            return response.timeSeries;
+          }));
+          if (options.targets[0].format === 'table') {
+            return this.transformMetricDataToTable(timeSeries);
+          } else {
+            return this.transformMetricData(timeSeries);
+          }
+        }, err => {
+          console.log(err);
+          err = JSON.parse(err.body);
+          appEvents.emit('ds-request-error', err);
+          throw err.error;
         });
-      })).then((responses: any) => {
-        let timeSeries = _.flatten(responses.filter(response => {
-          return !!response.timeSeries;
-        }).map(response => {
-          return response.timeSeries;
-        }));
-        if (options.targets[0].format === 'table') {
-          return this.transformMetricDataToTable(timeSeries);
-        } else {
-          return this.transformMetricData(timeSeries);
-        }
-      }, err => {
-        console.log(err);
-        err = JSON.parse(err.body);
-        appEvents.emit('ds-request-error', err);
-        throw err.error;
-      });
     });
   }
 
