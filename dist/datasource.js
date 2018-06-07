@@ -52,7 +52,9 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                 GoogleStackdriverDatasource.prototype.query = function (options) {
                     var _this = this;
                     return this.initialize().then(function () {
-                        return Promise.all(options.targets.map(function (target) {
+                        return Promise.all(options.targets
+                            .filter(function (target) { return !target.hide; })
+                            .map(function (target) {
                             target = angular_1.default.copy(target);
                             var filter = 'metric.type = "' + _this.templateSrv.replace(target.metricType, options.scopedVars || {}) + '"';
                             if (target.filter) {
@@ -213,8 +215,8 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             var projectId = metricsQuery[2] || _this.defaultProjectId;
                             var filter = metricsQuery[3];
                             var params = {
-                                projectId: projectId,
-                                filter: filter
+                                projectId: _this.templateSrv.replace(projectId),
+                                filter: _this.templateSrv.replace(filter)
                             };
                             return _this.performMetricDescriptorsQuery(params, {}).then(function (response) {
                                 return _this.$q.when(response.metricDescriptors.map(function (d) {
@@ -228,8 +230,8 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             var targetProperty = labelQuery[3];
                             var filter = labelQuery[4];
                             var params = {
-                                projectId: projectId,
-                                filter: filter,
+                                projectId: _this.templateSrv.replace(projectId),
+                                filter: _this.templateSrv.replace(filter),
                                 view: 'HEADERS'
                             };
                             return _this.performTimeSeriesQuery(params, { range: _this.timeSrv.timeRange() }).then(function (response) {
@@ -247,7 +249,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                         if (groupsQuery) {
                             var projectId = groupsQuery[1] || _this.defaultProjectId;
                             var params = {
-                                projectId: projectId
+                                projectId: _this.templateSrv.replace(projectId)
                             };
                             return _this.performGroupsQuery(params, {}).then(function (response) {
                                 return _this.$q.when(response.group.map(function (d) {
@@ -269,9 +271,9 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             var targetProperty = groupMembersQuery[4];
                             var filter = groupMembersQuery[5];
                             var params = {
-                                projectId: projectId,
-                                groupId: groupId,
-                                filter: filter
+                                projectId: _this.templateSrv.replace(projectId),
+                                groupId: _this.templateSrv.replace(groupId),
+                                filter: _this.templateSrv.replace(filter)
                             };
                             return _this.performGroupsMembersQuery(params, { range: _this.timeSrv.timeRange() }).then(function (response) {
                                 var valuePicker = lodash_1.default.property(targetProperty);
