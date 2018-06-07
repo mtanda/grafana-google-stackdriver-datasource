@@ -215,8 +215,8 @@ export default class GoogleStackdriverDatasource {
         let projectId = metricsQuery[2] || this.defaultProjectId;
         let filter = metricsQuery[3];
         let params = {
-          projectId: projectId,
-          filter: filter
+          projectId: this.templateSrv.replace(projectId),
+          filter: this.templateSrv.replace(filter)
         };
         return this.performMetricDescriptorsQuery(params, {}).then(response => {
           return this.$q.when(response.metricDescriptors.map(d => {
@@ -231,8 +231,8 @@ export default class GoogleStackdriverDatasource {
         let targetProperty = labelQuery[3];
         let filter = labelQuery[4];
         let params = {
-          projectId: projectId,
-          filter: filter,
+          projectId: this.templateSrv.replace(projectId),
+          filter: this.templateSrv.replace(filter),
           view: 'HEADERS'
         };
         return this.performTimeSeriesQuery(params, { range: this.timeSrv.timeRange() }).then(response => {
@@ -251,7 +251,7 @@ export default class GoogleStackdriverDatasource {
       if (groupsQuery) {
         let projectId = groupsQuery[1] || this.defaultProjectId;
         let params = {
-          projectId: projectId
+          projectId: this.templateSrv.replace(projectId)
         };
         return this.performGroupsQuery(params, {}).then(response => {
           return this.$q.when(response.group.map(d => {
@@ -274,9 +274,9 @@ export default class GoogleStackdriverDatasource {
         let targetProperty = groupMembersQuery[4];
         let filter = groupMembersQuery[5];
         let params = {
-          projectId: projectId,
-          groupId: groupId,
-          filter: filter
+          projectId: this.templateSrv.replace(projectId),
+          groupId: this.templateSrv.replace(groupId),
+          filter: this.templateSrv.replace(filter)
         };
         return this.performGroupsMembersQuery(params, { range: this.timeSrv.timeRange() }).then(response => {
           let valuePicker = _.property(targetProperty);
