@@ -41,6 +41,10 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                     this.access = instanceSettings.jsonData.access;
                     this.clientId = instanceSettings.jsonData.clientId;
                     this.defaultProjectId = instanceSettings.jsonData.defaultProjectId;
+                    this.maxAvailableToken = ((instanceSettings.jsonData.quota && instanceSettings.jsonData.quota.requestsPerMinutePerUser) || 6000) / 60;
+                    this.token = this.maxAvailableToken;
+                    this.provideTokenInterval = 1000 / this.maxAvailableToken;
+                    this.tokenTimer = null;
                     this.scopes = [
                         //'https://www.googleapis.com/auth/cloud-platform',
                         //'https://www.googleapis.com/auth/monitoring',
@@ -87,6 +91,39 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             throw err.error;
                         });
                     });
+                };
+                GoogleStackdriverDatasource.prototype.provideToken = function () {
+                    if (this.token < this.maxAvailableToken) {
+                        var tokenCount = 1;
+                        if (this.provideTokenInterval < 10) {
+                            tokenCount = Math.floor(10 / this.provideTokenInterval);
+                        }
+                        this.token += tokenCount;
+                        if (this.token === this.maxAvailableToken) {
+                            clearInterval(this.tokenTimer);
+                            this.tokenTimer = null;
+                        }
+                    }
+                };
+                GoogleStackdriverDatasource.prototype.delay = function (func, retryCount, wait) {
+                    return new Promise(function (resolve, reject) {
+                        setTimeout(function () {
+                            func(retryCount).then(resolve, reject);
+                        }, wait);
+                    });
+                };
+                GoogleStackdriverDatasource.prototype.retryable = function (retryCount, func) {
+                    var promise = Promise.reject({}).catch(function () { return func(retryCount); });
+                    for (var i = 0; i < retryCount; i++) {
+                        (function (i) {
+                            promise = promise.catch(function (err) { return func(i + 1); });
+                        })(i);
+                    }
+                    return promise;
+                };
+                GoogleStackdriverDatasource.prototype.calculateRetryWait = function (initialWait, retryCount) {
+                    return initialWait * Math.min(10, Math.pow(2, retryCount)) +
+                        Math.floor(Math.random() * 1000);
                 };
                 GoogleStackdriverDatasource.prototype.transformMetricData = function (timeSeries) {
                     var _this = this;
@@ -370,6 +407,11 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                 };
                 GoogleStackdriverDatasource.prototype.performTimeSeriesQuery = function (target, options) {
                     var _this = this;
+                    if (this.token === 0) {
+                        return this.delay(function (retryCount) {
+                            return _this.performTimeSeriesQuery(target, options);
+                        }, 0, Math.ceil(this.provideTokenInterval));
+                    }
                     target = angular_1.default.copy(target);
                     var params = {};
                     params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
@@ -399,6 +441,12 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                     }
                     params['interval.startTime'] = this.convertTime(options.range.from, false);
                     params['interval.endTime'] = this.convertTime(options.range.to, true);
+                    this.token--;
+                    if (this.tokenTimer === null) {
+                        this.tokenTimer = setInterval(function () {
+                            _this.provideToken();
+                        }, Math.max(10, Math.ceil(this.provideTokenInterval)));
+                    }
                     return (function (params) {
                         if (_this.access != 'proxy') {
                             return _this.gapi.client.monitoring.projects.timeSeries.list(params);
@@ -434,6 +482,17 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                             response.timeSeries = response.timeSeries.concat(nextResponse.timeSeries);
                             return response;
                         });
+                    }, function (err) {
+                        var e = JSON.parse(err.body);
+                        if (e.error.message.indexOf('The query rate is too high.') >= 0) {
+                            _this.token = 0;
+                            return _this.retryable(3, function (retryCount) {
+                                return _this.delay(function (retryCount) {
+                                    return _this.performTimeSeriesQuery(target, options);
+                                }, retryCount, _this.calculateRetryWait(1000, retryCount));
+                            });
+                        }
+                        throw err;
                     });
                 };
                 GoogleStackdriverDatasource.prototype.performMetricDescriptorsQuery = function (target, options) {
