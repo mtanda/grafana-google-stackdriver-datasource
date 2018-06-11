@@ -23,6 +23,10 @@ export default class GoogleStackdriverDatasource {
   access: string;
   clientId: string;
   defaultProjectId: string;
+  maxAvailableToken: number;
+  token: number;
+  provideTokenInterval: number;
+  tokenTimer: any;
   scopes: any;
   discoveryDocs: any;
   initialized: boolean;
@@ -36,6 +40,10 @@ export default class GoogleStackdriverDatasource {
     this.access = instanceSettings.jsonData.access;
     this.clientId = instanceSettings.jsonData.clientId;
     this.defaultProjectId = instanceSettings.jsonData.defaultProjectId;
+    this.maxAvailableToken = ((instanceSettings.jsonData.quota && instanceSettings.jsonData.quota.requestsPerMinutePerUser) || 6000) / 60;
+    this.token = this.maxAvailableToken;
+    this.provideTokenInterval = 1000 / this.maxAvailableToken;
+    this.tokenTimer = null;
     this.scopes = [
       //'https://www.googleapis.com/auth/cloud-platform',
       //'https://www.googleapis.com/auth/monitoring',
@@ -81,6 +89,43 @@ export default class GoogleStackdriverDatasource {
           throw err.error;
         });
     });
+  }
+
+  provideToken() {
+    if (this.token < this.maxAvailableToken) {
+      let tokenCount = 1;
+      if (this.provideTokenInterval < 10) { // setInterval's minumum interval is 10
+        tokenCount = Math.floor(10 / this.provideTokenInterval);
+      }
+      this.token += tokenCount;
+      if (this.token === this.maxAvailableToken) {
+        clearInterval(this.tokenTimer);
+        this.tokenTimer = null;
+      }
+    }
+  }
+
+  delay(func, retryCount, wait) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        func(retryCount).then(resolve, reject);
+      }, wait);
+    });
+  }
+
+  retryable(retryCount, func) {
+    let promise = Promise.reject({}).catch(() => func(retryCount));
+    for (let i = 0; i < retryCount; i++) {
+      ((i) => {
+        promise = promise.catch(err => func(i + 1));
+      })(i);
+    }
+    return promise;
+  }
+
+  calculateRetryWait(initialWait, retryCount) {
+    return initialWait * Math.min(10, Math.pow(2, retryCount)) +
+      Math.floor(Math.random() * 1000);
   }
 
   transformMetricData(timeSeries) {
@@ -375,6 +420,12 @@ export default class GoogleStackdriverDatasource {
   }
 
   performTimeSeriesQuery(target, options) {
+    if (this.token === 0) {
+      return this.delay((retryCount) => {
+        return this.performTimeSeriesQuery(target, options);
+      }, 0, Math.ceil(this.provideTokenInterval));
+    }
+
     target = angular.copy(target);
     let params: any = {};
     params.name = this.templateSrv.replace('projects/' + (target.projectId || this.defaultProjectId), options.scopedVars || {});
@@ -402,6 +453,14 @@ export default class GoogleStackdriverDatasource {
     }
     params['interval.startTime'] = this.convertTime(options.range.from, false);
     params['interval.endTime'] = this.convertTime(options.range.to, true);
+
+
+    this.token--;
+    if (this.tokenTimer === null) {
+      this.tokenTimer = setInterval(() => {
+        this.provideToken();
+      }, Math.max(10, Math.ceil(this.provideTokenInterval)));
+    }
     return ((params) => {
       if (this.access != 'proxy') {
         return this.gapi.client.monitoring.projects.timeSeries.list(params);
@@ -436,6 +495,17 @@ export default class GoogleStackdriverDatasource {
         response.timeSeries = response.timeSeries.concat(nextResponse.timeSeries);
         return response;
       });
+    }, err => {
+      let e = JSON.parse(err.body);
+      if (e.error.message.indexOf('The query rate is too high.') >= 0) {
+        this.token = 0;
+        return this.retryable(3, (retryCount) => {
+          return this.delay((retryCount) => {
+            return this.performTimeSeriesQuery(target, options);
+          }, retryCount, this.calculateRetryWait(1000, retryCount));
+        });
+      }
+      throw err;
     });
   }
 

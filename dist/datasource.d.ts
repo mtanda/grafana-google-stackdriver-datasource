@@ -10,6 +10,10 @@ export default class GoogleStackdriverDatasource {
     access: string;
     clientId: string;
     defaultProjectId: string;
+    maxAvailableToken: number;
+    token: number;
+    provideTokenInterval: number;
+    tokenTimer: any;
     scopes: any;
     discoveryDocs: any;
     initialized: boolean;
@@ -17,6 +21,10 @@ export default class GoogleStackdriverDatasource {
     /** @ngInject */
     constructor(instanceSettings: any, $q: any, templateSrv: any, timeSrv: any, backendSrv: any);
     query(options: any): any;
+    provideToken(): void;
+    delay(func: any, retryCount: any, wait: any): Promise<{}>;
+    retryable(retryCount: any, func: any): Promise<void>;
+    calculateRetryWait(initialWait: any, retryCount: any): number;
     transformMetricData(timeSeries: any): {
         data: any;
     };
