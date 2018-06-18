@@ -205,23 +205,21 @@ export default class GoogleStackdriverDatasource {
     // Collect all labels across all metrics
     metricLabels['metric.type'] = 1;
     metricLabels['resource.type'] = 1;
-    _.each(md, function (series) {
-      [
-        'metric.labels',
-        'resource.labels',
-        'metadata.systemLabels',
-        'metadata.userLabels',
-      ].forEach(path => {
-        _.each(md, _.property(path)).forEach(labels => {
-          if (labels) {
-            _.keys(labels).forEach(k => {
-              let label = path + '.' + k;
-              if (!metricLabels.hasOwnProperty(label)) {
-                metricLabels[label] = 1;
-              }
-            });
-          }
-        });
+    [
+      'metric.labels',
+      'resource.labels',
+      'metadata.systemLabels',
+      'metadata.userLabels',
+    ].forEach(path => {
+      _.each(md, _.property(path)).forEach(labels => {
+        if (labels) {
+          _.keys(labels).forEach(k => {
+            let label = path + '.' + k;
+            if (!metricLabels.hasOwnProperty(label)) {
+              metricLabels[label] = 1;
+            }
+          });
+        }
       });
     });
 

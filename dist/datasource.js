@@ -200,23 +200,21 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                     // Collect all labels across all metrics
                     metricLabels['metric.type'] = 1;
                     metricLabels['resource.type'] = 1;
-                    lodash_1.default.each(md, function (series) {
-                        [
-                            'metric.labels',
-                            'resource.labels',
-                            'metadata.systemLabels',
-                            'metadata.userLabels',
-                        ].forEach(function (path) {
-                            lodash_1.default.each(md, lodash_1.default.property(path)).forEach(function (labels) {
-                                if (labels) {
-                                    lodash_1.default.keys(labels).forEach(function (k) {
-                                        var label = path + '.' + k;
-                                        if (!metricLabels.hasOwnProperty(label)) {
-                                            metricLabels[label] = 1;
-                                        }
-                                    });
-                                }
-                            });
+                    [
+                        'metric.labels',
+                        'resource.labels',
+                        'metadata.systemLabels',
+                        'metadata.userLabels',
+                    ].forEach(function (path) {
+                        lodash_1.default.each(md, lodash_1.default.property(path)).forEach(function (labels) {
+                            if (labels) {
+                                lodash_1.default.keys(labels).forEach(function (k) {
+                                    var label = path + '.' + k;
+                                    if (!metricLabels.hasOwnProperty(label)) {
+                                        metricLabels[label] = 1;
+                                    }
+                                });
+                            }
                         });
                     });
                     // Sort metric labels, create columns for them and record their index
