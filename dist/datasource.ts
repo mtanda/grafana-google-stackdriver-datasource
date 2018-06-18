@@ -212,7 +212,7 @@ export default class GoogleStackdriverDatasource {
         'metadata.systemLabels',
         'metadata.userLabels',
       ].forEach(path => {
-        _.map(md, _.property(path)).forEach(labels => {
+        _.each(md, _.property(path)).forEach(labels => {
           if (labels) {
             _.keys(labels).forEach(k => {
               let label = path + '.' + k;
