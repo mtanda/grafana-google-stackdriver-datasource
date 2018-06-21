@@ -733,7 +733,11 @@ export default class GoogleStackdriverDatasource {
     alias = alias.replace(aliasRegex, (match, g1) => {
       let matchedValue = _.property(g1)(aliasData);
       if (!_.isUndefined(matchedValue)) {
-        return matchedValue;
+        if (typeof matchedValue === 'object') {
+          return JSON.stringify(matchedValue);
+        } else {
+          return matchedValue;
+        }
       }
       return g1;
     });

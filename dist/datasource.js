@@ -720,7 +720,12 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                     alias = alias.replace(aliasRegex, function (match, g1) {
                         var matchedValue = lodash_1.default.property(g1)(aliasData);
                         if (!lodash_1.default.isUndefined(matchedValue)) {
-                            return matchedValue;
+                            if (typeof matchedValue === 'object') {
+                                return JSON.stringify(matchedValue);
+                            }
+                            else {
+                                return matchedValue;
+                            }
                         }
                         return g1;
                     });
