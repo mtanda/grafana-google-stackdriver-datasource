@@ -6,42 +6,47 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
 
   grunt.initConfig({
-    clean: ['dist'],
-
+    clean: {
+      files: [
+        'dist/**/*',
+        '!dist/google-stackdriver-plugin_darwin_amd64',
+        '!dist/google-stackdriver-plugin_linux_amd64',
+      ],
+    },
     copy: {
       dist_js: {
         expand: true,
         cwd: 'src',
         src: ['**/*.ts', '**/*.d.ts', '**/*.js'],
-        dest: 'dist'
+        dest: 'dist',
       },
       dist_html: {
         expand: true,
         flatten: true,
         cwd: 'src/partials',
         src: ['*.html'],
-        dest: 'dist/partials/'
+        dest: 'dist/partials/',
       },
       dist_css: {
         expand: true,
         flatten: true,
         cwd: 'src/css',
         src: ['*.css'],
-        dest: 'dist/css/'
+        dest: 'dist/css/',
       },
       dist_img: {
         expand: true,
         flatten: true,
-        cwd: 'src/img',
+        cwd: 'src/images',
         src: ['*.*'],
-        dest: 'dist/img/'
+        dest: 'dist/images/',
       },
       dist_statics: {
         expand: true,
         flatten: true,
         src: ['src/plugin.json', 'LICENSE', 'README.md', 'src/query_help.md'],
-        dest: 'dist/'
-      }
+        dest: 'dist/',
+      },
     },
 
     typescript: {
@@ -57,36 +62,46 @@ module.exports = function(grunt) {
           experimentalDecorators: true,
           sourceMap: true,
           noImplicitAny: false,
-        }
-      }
+        },
+      },
     },
 
     babel: {
       options: {
         sourceMap: true,
-        presets: ['es2015']
+        presets: ['es2015'],
       },
       dist: {
         options: {
-          plugins: ['transform-es2015-modules-systemjs', 'transform-es2015-for-of']
+          plugins: ['transform-es2015-modules-systemjs', 'transform-es2015-for-of'],
         },
-        files: [{
-          cwd: 'src',
-          expand: true,
-          src: ['**/*.js'],
-          dest: 'dist',
-          ext:'.js'
-        }]
-      }
+        files: [
+          {
+            cwd: 'src',
+            expand: true,
+            src: ['**/*.js'],
+            dest: 'dist',
+            ext: '.js',
+          },
+        ],
+      },
     },
 
     watch: {
-      files: ['src/**/*.ts', 'src/**/*.html', 'src/**/*.css', 'src/img/*.*', 'src/plugin.json', 'README.md', 'src/query_help.md'],
+      files: [
+        'src/**/*.ts',
+        'src/**/*.html',
+        'src/**/*.css',
+        'src/img/*.*',
+        'src/plugin.json',
+        'README.md',
+        'src/query_help.md',
+      ],
       tasks: ['default'],
       options: {
         debounceDelay: 250,
       },
-    }
+    },
   });
 
   grunt.registerTask('default', [
@@ -97,6 +112,6 @@ module.exports = function(grunt) {
     'copy:dist_html',
     'copy:dist_css',
     'copy:dist_img',
-    'copy:dist_statics'
+    'copy:dist_statics',
   ]);
 };
