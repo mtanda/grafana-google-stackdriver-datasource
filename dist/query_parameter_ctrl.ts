@@ -18,40 +18,42 @@ angular.module('grafana.directives').directive('googleStackdriverQueryParameter'
   };
 });
 
-angular.module('grafana.controllers').controller('GoogleStackdriverQueryParameterCtrl', ($scope, templateSrv, uiSegmentSrv, datasourceSrv, timeSrv, $q) => {
-  $scope.init = function () {
-    let target = $scope.target;
-    target.projectId = target.projectId || '';
-    target.mode = 'monitoring'; // will support logging
-    target.metricType = target.metricType || '';
-    target.filter = target.filter || '';
-    target.aggregation = target.aggregation || {
-      perSeriesAligner: 'ALIGN_NONE',
-      alignmentPeriod: '',
-      crossSeriesReducer: 'REDUCE_NONE',
-      groupByFields: []
+angular
+  .module('grafana.controllers')
+  .controller('GoogleStackdriverQueryParameterCtrl', ($scope, uiSegmentSrv, timeSrv, $q) => {
+    $scope.init = function () {
+      let target = $scope.target;
+      target.projectId = target.projectId || '';
+      target.mode = 'monitoring'; // will support logging
+      target.metricType = target.metricType || '';
+      target.filter = target.filter || '';
+      target.aggregation = target.aggregation || {
+        perSeriesAligner: 'ALIGN_NONE',
+        alignmentPeriod: '',
+        crossSeriesReducer: 'REDUCE_NONE',
+        groupByFields: []
+      };
+      target.alias = target.alias || '';
+      target.seriesFilter = target.seriesFilter || {
+        mode: 'NONE',
+        type: 'NONE',
+        param: ''
+      };
+
+      $scope.perSeriesAlignerSegment = uiSegmentSrv.getSegmentForValue($scope.target.aggregation.perSeriesAligner, 'aligner');
+      $scope.crossSeriesReducerSegment = uiSegmentSrv.getSegmentForValue($scope.target.aggregation.crossSeriesReducer, 'reducer');
+      $scope.groupByFieldsSegments = _.map($scope.target.aggregation.groupByFields, (field) => {
+        return uiSegmentSrv.getSegmentForValue(field);
+      });
+      $scope.ensurePlusButton($scope.groupByFieldsSegments);
+      $scope.removeGroupByFieldsSegment = uiSegmentSrv.newSegment({ fake: true, value: '-- remove field --' });
+      $scope.seriesFilterModeSegment = uiSegmentSrv.getSegmentForValue($scope.target.seriesFilter.mode, 'seriesFilterMode');
+      $scope.seriesFilterTypeSegment = uiSegmentSrv.getSegmentForValue($scope.target.seriesFilter.type, 'seriesFilterType');
+
+      if (!$scope.onChange) {
+        $scope.onChange = function () { };
+      }
     };
-    target.alias = target.alias || '';
-    target.seriesFilter = target.seriesFilter || {
-      mode: 'NONE',
-      type: 'NONE',
-      param: ''
-    }
-
-    $scope.perSeriesAlignerSegment = uiSegmentSrv.getSegmentForValue($scope.target.aggregation.perSeriesAligner, 'aligner');
-    $scope.crossSeriesReducerSegment = uiSegmentSrv.getSegmentForValue($scope.target.aggregation.crossSeriesReducer, 'reducer');
-    $scope.groupByFieldsSegments = _.map($scope.target.aggregation.groupByFields, (field) => {
-      return uiSegmentSrv.getSegmentForValue(field);
-    });
-    $scope.ensurePlusButton($scope.groupByFieldsSegments);
-    $scope.removeGroupByFieldsSegment = uiSegmentSrv.newSegment({ fake: true, value: '-- remove field --' });
-    $scope.seriesFilterModeSegment = uiSegmentSrv.getSegmentForValue($scope.target.seriesFilter.mode, 'seriesFilterMode');
-    $scope.seriesFilterTypeSegment = uiSegmentSrv.getSegmentForValue($scope.target.seriesFilter.type, 'seriesFilterType');
-
-    if (!$scope.onChange) {
-      $scope.onChange = function () { };
-    }
-  };
 
   $scope.getCompleter = function (query) {
     return new GoogleStackdriverCompleter(this.datasource, timeSrv, $scope.target);
@@ -177,7 +179,7 @@ angular.module('grafana.controllers').controller('GoogleStackdriverQueryParamete
           paths.push(path + key);
         }
       }
-    }
+    };
     walk(timeSeries, '');
     return paths;
   }

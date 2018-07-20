@@ -134,7 +134,7 @@ export default class GoogleStackdriverDatasource {
         let aliasPattern = series.target.alias;
         let valueKey = series.valueType.toLowerCase() + 'Value';
 
-        if (valueKey != 'distributionValue') {
+        if (valueKey !== 'distributionValue') {
           let datapoints = [];
           let metricLabel = this.getMetricLabel(aliasPattern, series);
           for (let point of series.points) {
@@ -170,7 +170,7 @@ export default class GoogleStackdriverDatasource {
                   datapoints: []
                 };
               }
-              buckets[i].datapoints.push([value, Date.parse(point.interval.endTime).valueOf()])
+              buckets[i].datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
             }
 
             // fill empty bucket
@@ -368,7 +368,7 @@ export default class GoogleStackdriverDatasource {
   }
 
   initialize() {
-    if (this.access == 'proxy') {
+    if (this.access === 'proxy') {
       return Promise.resolve([]);
     }
     if (this.initialized) {
@@ -460,7 +460,7 @@ export default class GoogleStackdriverDatasource {
       }, Math.max(10, Math.ceil(this.provideTokenInterval)));
     }
     return ((params) => {
-      if (this.access != 'proxy') {
+      if (this.access !== 'proxy') {
         return this.gapi.client.monitoring.projects.timeSeries.list(params);
       } else {
         return this.backendPluginRawRequest({
@@ -516,7 +516,7 @@ export default class GoogleStackdriverDatasource {
       params.pageToken = target.pageToken;
     }
     return ((params) => {
-      if (this.access != 'proxy') {
+      if (this.access !== 'proxy') {
         return this.gapi.client.monitoring.projects.metricDescriptors.list(params);
       } else {
         return this.backendPluginRawRequest({
@@ -558,7 +558,7 @@ export default class GoogleStackdriverDatasource {
       params.pageToken = target.pageToken;
     }
     return ((params) => {
-      if (this.access != 'proxy') {
+      if (this.access !== 'proxy') {
         return this.gapi.client.monitoring.projects.groups.list(params);
       } else {
         return this.backendPluginRawRequest({
@@ -606,7 +606,7 @@ export default class GoogleStackdriverDatasource {
     params['interval.startTime'] = this.convertTime(options.range.from, false);
     params['interval.endTime'] = this.convertTime(options.range.to, true);
     return ((params) => {
-      if (this.access != 'proxy') {
+      if (this.access !== 'proxy') {
         return this.gapi.client.monitoring.projects.groups.members.list(params);
       } else {
         return this.backendPluginRawRequest({
@@ -651,7 +651,9 @@ export default class GoogleStackdriverDatasource {
     }
 
     let param = _.toNumber(target.seriesFilter.param);
-    if (_.isNaN(param)) return response;
+    if (_.isNaN(param)) {
+      return response;
+    }
 
     response.timeSeries.forEach(series => {
       series['filterValue'] = this.getSeriesFilterValue(target, series);
@@ -688,7 +690,7 @@ export default class GoogleStackdriverDatasource {
 
   getSeriesFilterValue(target, series) {
     // For empty timeseries return filter value that will push them out first.
-    if (series.points.length == 0) {
+    if (series.points.length === 0) {
       if (target.seriesFilter.mode === 'BOTTOM' ||
         target.seriesFilter.mode === 'BELOW') {
         return Number.MAX_VALUE;
@@ -778,5 +780,5 @@ export default class GoogleStackdriverDatasource {
       date = dateMath.parse(date, roundUp);
     }
     return date.toISOString();
-  };
+  }
 }

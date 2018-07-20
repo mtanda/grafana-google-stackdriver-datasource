@@ -26,7 +26,9 @@ System.register(['angular', 'lodash', './completer'], function(exports_1) {
                     }
                 };
             });
-            angular_1.default.module('grafana.controllers').controller('GoogleStackdriverQueryParameterCtrl', function ($scope, templateSrv, uiSegmentSrv, datasourceSrv, timeSrv, $q) {
+            angular_1.default
+                .module('grafana.controllers')
+                .controller('GoogleStackdriverQueryParameterCtrl', function ($scope, uiSegmentSrv, timeSrv, $q) {
                 $scope.init = function () {
                     var target = $scope.target;
                     target.projectId = target.projectId || '';
