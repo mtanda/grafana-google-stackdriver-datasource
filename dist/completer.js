@@ -20,6 +20,10 @@ System.register(['lodash'], function(exports_1) {
                 GoogleStackdriverCompleter.prototype.getCompletions = function (editor, session, pos, prefix, callback) {
                     var _this = this;
                     var token = session.getTokenAt(pos.row, pos.column);
+                    if (!token) {
+                        callback(null, []);
+                        return;
+                    }
                     var metricType = this.target.metricType;
                     switch (token.type) {
                         case 'identifier':
