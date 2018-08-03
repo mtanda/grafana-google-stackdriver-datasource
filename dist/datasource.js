@@ -137,7 +137,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                                 for (var _i = 0, _a = series.points; _i < _a.length; _i++) {
                                     var point = _a[_i];
                                     var value = point.value[valueKey];
-                                    if (!value) {
+                                    if (lodash_1.default.isUndefined(value)) {
                                         continue;
                                     }
                                     switch (valueKey) {

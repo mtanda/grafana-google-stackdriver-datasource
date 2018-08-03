@@ -139,7 +139,7 @@ export default class GoogleStackdriverDatasource {
           let metricLabel = this.getMetricLabel(aliasPattern, series);
           for (let point of series.points) {
             let value = point.value[valueKey];
-            if (!value) {
+            if (_.isUndefined(value)) {
               continue;
             }
             switch (valueKey) {
