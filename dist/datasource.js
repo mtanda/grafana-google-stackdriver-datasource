@@ -131,7 +131,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                         data: timeSeries.map(function (series) {
                             var aliasPattern = series.target.alias;
                             var valueKey = series.valueType.toLowerCase() + 'Value';
-                            if (valueKey != 'distributionValue') {
+                            if (valueKey !== 'distributionValue') {
                                 var datapoints = [];
                                 var metricLabel = _this.getMetricLabel(aliasPattern, series);
                                 for (var _i = 0, _a = series.points; _i < _a.length; _i++) {
@@ -357,7 +357,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                 };
                 GoogleStackdriverDatasource.prototype.initialize = function () {
                     var _this = this;
-                    if (this.access == 'proxy') {
+                    if (this.access === 'proxy') {
                         return Promise.resolve([]);
                     }
                     if (this.initialized) {
@@ -446,7 +446,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                         }, Math.max(10, Math.ceil(this.provideTokenInterval)));
                     }
                     return (function (params) {
-                        if (_this.access != 'proxy') {
+                        if (_this.access !== 'proxy') {
                             return _this.gapi.client.monitoring.projects.timeSeries.list(params);
                         }
                         else {
@@ -503,7 +503,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                         params.pageToken = target.pageToken;
                     }
                     return (function (params) {
-                        if (_this.access != 'proxy') {
+                        if (_this.access !== 'proxy') {
                             return _this.gapi.client.monitoring.projects.metricDescriptors.list(params);
                         }
                         else {
@@ -546,7 +546,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                         params.pageToken = target.pageToken;
                     }
                     return (function (params) {
-                        if (_this.access != 'proxy') {
+                        if (_this.access !== 'proxy') {
                             return _this.gapi.client.monitoring.projects.groups.list(params);
                         }
                         else {
@@ -595,7 +595,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                     params['interval.startTime'] = this.convertTime(options.range.from, false);
                     params['interval.endTime'] = this.convertTime(options.range.to, true);
                     return (function (params) {
-                        if (_this.access != 'proxy') {
+                        if (_this.access !== 'proxy') {
                             return _this.gapi.client.monitoring.projects.groups.members.list(params);
                         }
                         else {
@@ -640,8 +640,9 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                         return response;
                     }
                     var param = lodash_1.default.toNumber(target.seriesFilter.param);
-                    if (lodash_1.default.isNaN(param))
+                    if (lodash_1.default.isNaN(param)) {
                         return response;
+                    }
                     response.timeSeries.forEach(function (series) {
                         series['filterValue'] = _this.getSeriesFilterValue(target, series);
                     });
@@ -675,7 +676,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                 };
                 GoogleStackdriverDatasource.prototype.getSeriesFilterValue = function (target, series) {
                     // For empty timeseries return filter value that will push them out first.
-                    if (series.points.length == 0) {
+                    if (series.points.length === 0) {
                         if (target.seriesFilter.mode === 'BOTTOM' ||
                             target.seriesFilter.mode === 'BELOW') {
                             return Number.MAX_VALUE;
@@ -766,7 +767,6 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                     }
                     return date.toISOString();
                 };
-                ;
                 return GoogleStackdriverDatasource;
             })();
             exports_1("default", GoogleStackdriverDatasource);

@@ -122,7 +122,7 @@ System.register([], function (_export, _context) {
         (function () {
           this.getCompletions = function (state, session, pos, prefix, callback) {
             var token = session.getTokenAt(pos.row, pos.column);
-            if (token.type === 'identifier' || token.type === 'string.quoted') {
+            if (!token || token.type === 'identifier' || token.type === 'string.quoted') {
               return callback(null, []);
             }
 

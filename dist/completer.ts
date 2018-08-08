@@ -1,6 +1,6 @@
 ///<reference path="../node_modules/grafana-sdk-mocks/app/headers/common.d.ts" />
 
-import GoogleStackdriverDatasource from "./datasource";
+import GoogleStackdriverDatasource from './datasource';
 import _ from 'lodash';
 
 export default class GoogleStackdriverCompleter {
@@ -20,6 +20,10 @@ export default class GoogleStackdriverCompleter {
 
   getCompletions(editor, session, pos, prefix, callback) {
     let token = session.getTokenAt(pos.row, pos.column);
+    if (!token) {
+      callback(null, []);
+      return;
+    }
 
     var metricType = this.target.metricType;
     switch (token.type) {

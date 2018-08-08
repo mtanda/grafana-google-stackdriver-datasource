@@ -36,8 +36,10 @@
     "karma-phantomjs-launcher": "^1.0.4",
     "karma-sinon": "^1.0.5",
     "karma-systemjs": "^0.16.0",
+    "load-grunt-tasks": "^4.0.0",
     "plugin-typescript": "^7.1.0",
     "sinon": "^3.2.1",
-    "systemjs-plugin-css": "^0.1.35"
+    "systemjs-plugin-css": "^0.1.35",
+    "typescript": "^2.8.3"
   }
 }
