@@ -145,7 +145,7 @@ System.register(['lodash', 'angular', 'app/core/utils/datemath', 'app/core/app_e
                                             value = value ? 1 : 0; // convert bool value to int
                                             break;
                                     }
-                                    datapoints.push([value, Date.parse(point.interval.endTime).valueOf()]);
+                                    datapoints.push([parseFloat(value), Date.parse(point.interval.endTime).valueOf()]);
                                 }
                                 // Stackdriver API returns series in reverse chronological order.
                                 datapoints.reverse();
